@@ -4,8 +4,18 @@ local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local CAS = game:GetService("ContextActionService")
 local TweenService = game:GetService("TweenService")
+local LocalizationService = game:GetService("LocalizationService")
 
 local player = Players.LocalPlayer
+local isFrench = RunService:IsStudio()
+if not isFrench then
+	local ok, locale = pcall(function()
+		return LocalizationService.RobloxLocaleId
+	end)
+	if ok and type(locale) == "string" then
+		isFrench = string.sub(string.lower(locale), 1, 2) == "fr"
+	end
+end
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local remote = folder:WaitForChild("Training")
@@ -357,9 +367,9 @@ task.spawn(function()
 				offered = zone
 				local req = zone:GetAttribute("RequiredPyramids") or 0
 				if zone:GetAttribute("Paid") or req <= 0 then
-					say("You haven't unlocked this zone!")
+					say(isFrench and "Vous n\'avez pas débloqué cette zone !" or "You haven\'t unlocked this zone!")
 				else
-					say(("You haven't unlocked this zone! Needs %d Pyramid%s"):format(req, req == 1 and "" or "s"))
+					say(isFrench and (("Vous n\'avez pas débloqué cette zone ! Nécessite %d pyramide%s"):format(req, req == 1 and "" or "s")) or (("You haven\'t unlocked this zone! Needs %d Pyramid%s"):format(req, req == 1 and "" or "s")))
 				end
 				local u = (C.ZoneUnlock or {})[zone.Name]
 				if u and (u.GamePassId or 0) > 0 then
