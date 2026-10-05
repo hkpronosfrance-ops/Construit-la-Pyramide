@@ -49,8 +49,11 @@ Players.PlayerAdded:Connect(watch)
 Players.PlayerRemoving:Connect(function(p) if p.Character then remove(p.Character) end end)
 task.spawn(function()
  local map=workspace:WaitForChild("PyramidMap")
- local ph=map:WaitForChild("Pharaoh")
- local npc=ph:WaitForChild("PharaohNPC");npc:WaitForChild("HumanoidRootPart");add(npc)
+ local ph=map:FindFirstChild("Pharaoh")
+ if not ph then return end
+ local npc=ph:FindFirstChild("PharaohNPC")
+ if not npc or not npc:FindFirstChild("HumanoidRootPart") then return end
+ add(npc)
 end)
 local timer=0
 RunService.Heartbeat:Connect(function(dt)
