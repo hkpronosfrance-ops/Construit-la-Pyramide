@@ -14,7 +14,11 @@ task.spawn(function()
 	if ok and info and info.PriceInRobux then
 		price = info.PriceInRobux
 	end
-	local model = workspace:WaitForChild("PyramidMap"):WaitForChild("Pharaoh")
+	local map = workspace:WaitForChild("PyramidMap")
+	local model = map:FindFirstChild("Pharaoh")
+	if not model then
+		return
+	end
 	local tag = model:FindFirstChild("Tag", true)
 	local label = tag and tag:FindFirstChild("Price")
 	if label and price then
@@ -26,15 +30,29 @@ task.spawn(function()
 	end
 end)
 local map = workspace:WaitForChild("PyramidMap")
-local model = map:WaitForChild("Pharaoh")
-local npc = model:WaitForChild("PharaohNPC")
-local hum = npc:WaitForChild("Humanoid")
-local animator = hum:WaitForChild("Animator")
-local head = npc:WaitForChild("Head")
-local hrp = npc:WaitForChild("HumanoidRootPart")
-local neck = head:WaitForChild("Neck")
-local waist = npc:WaitForChild("UpperTorso"):WaitForChild("Waist")
-local staff = npc:WaitForChild("Staff")
+local model = map:FindFirstChild("Pharaoh")
+if not model then
+	return
+end
+local npc = model:FindFirstChild("PharaohNPC")
+if not npc then
+	return
+end
+local hum = npc:FindFirstChildOfClass("Humanoid")
+local head = npc:FindFirstChild("Head")
+local hrp = npc:FindFirstChild("HumanoidRootPart")
+local upperTorso = npc:FindFirstChild("UpperTorso")
+local staff = npc:FindFirstChild("Staff")
+if not (hum and head and hrp and upperTorso and staff) then
+	return
+end
+local animator = hum:FindFirstChildOfClass("Animator") or Instance.new("Animator")
+animator.Parent = hum
+local neck = head:FindFirstChild("Neck")
+local waist = upperTorso:FindFirstChild("Waist")
+if not (neck and waist) then
+	return
+end
 
 local PINK = Color3.fromRGB(255, 92, 232)
 local NEAR = 18
