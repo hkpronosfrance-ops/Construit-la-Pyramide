@@ -1,0 +1,11 @@
+# Roblox / Rojo
+*.rbxl.lock
+*.rbxlx.lock
+*.rbxm.lock
+*.rbxmx.lock
+
+# Tooling
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
