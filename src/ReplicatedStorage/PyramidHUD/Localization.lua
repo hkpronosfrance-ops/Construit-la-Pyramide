@@ -1,4 +1,5 @@
 local LocalizationService = game:GetService("LocalizationService")
+local Players = game:GetService("Players")
 
 local L = {}
 
@@ -159,6 +160,16 @@ local EXACT = {
 }
 
 local function locale()
+	local player = Players.LocalPlayer
+	if player then
+		local ok, value = pcall(function()
+			return player.LocaleId
+		end)
+		if ok and type(value) == "string" and value ~= "" then
+			return value:lower()
+		end
+	end
+
 	local ok, value = pcall(function()
 		return LocalizationService.RobloxLocaleId
 	end)
