@@ -264,24 +264,31 @@ local function placeSpeedEdit()
 			return
 		end
 
-		local width = TextService:GetTextSize(
+		local scale = rootScale.Scale > 0 and rootScale.Scale or 1
+		local parent = speedEdit.Parent
+
+		local measured = TextService:GetTextSize(
 			sub.Text,
 			sub.TextSize,
 			sub.Font,
 			Vector2.new(1000, math.max(100, sub.AbsoluteSize.Y))
 		).X
 
-		-- The edit icon lives in the same Speed row as the sub-label.
-		-- Place it immediately after the rendered text, not after the label's full box.
+		local localTextStartX = (sub.AbsolutePosition.X - parent.AbsolutePosition.X) / scale
+		local localTextCenterY = (sub.AbsolutePosition.Y - parent.AbsolutePosition.Y + sub.AbsoluteSize.Y / 2) / scale
+
+		speedEdit.Visible = true
 		speedEdit.AnchorPoint = Vector2.new(0, 0.5)
 		speedEdit.Position = UDim2.fromOffset(
-			sub.Position.X.Offset + math.ceil(width) + 6,
-			sub.Position.Y.Offset + math.floor(sub.Size.Y.Offset / 2)
+			math.ceil(localTextStartX + measured + 6),
+			math.ceil(localTextCenterY)
 		)
 	end)
 end
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
 rows.Speed.sub:GetPropertyChangedSignal("TextSize"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeSpeedEdit)
 rootScale:GetPropertyChangedSignal("Scale"):Connect(placeSpeedEdit)
 placeSpeedEdit()
 
@@ -566,17 +573,20 @@ for _, k in C.Keys do
 end
 
 local hintsBasePosition = hints.Position
+local hintsBaseAnchor = hints.AnchorPoint
 local function placeFrenchKeys()
 	if L.isFrench() then
-		-- French action names are wider than "Pick Up" / "Drop".
-		-- Move the whole keyboard/gamepad block left while preserving its vertical position.
+		-- Anchor the whole key-hint group to the right side and leave enough room
+		-- for longer French labels such as "Ramasser" and "Déposer".
+		hints.AnchorPoint = Vector2.new(1, hintsBaseAnchor.Y)
 		hints.Position = UDim2.new(
-			hintsBasePosition.X.Scale,
-			hintsBasePosition.X.Offset - 120,
+			1,
+			-190,
 			hintsBasePosition.Y.Scale,
 			hintsBasePosition.Y.Offset
 		)
 	else
+		hints.AnchorPoint = hintsBaseAnchor
 		hints.Position = hintsBasePosition
 	end
 end
