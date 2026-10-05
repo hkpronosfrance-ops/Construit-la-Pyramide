@@ -19,27 +19,6 @@ local function bootstrapFrenchLocalization()
 	local busy = setmetatable({}, { __mode = "k" })
 	local hooked = setmetatable({}, { __mode = "k" })
 
-	local function fitTranslatedText(obj)
-		if not (obj:IsA("TextLabel") or obj:IsA("TextButton")) then
-			return
-		end
-		if obj:GetAttribute("FrenchAutoFit") then
-			return
-		end
-		obj:SetAttribute("FrenchAutoFit", true)
-		local originalSize = math.max(12, obj.TextSize)
-		local constraint = obj:FindFirstChild("FrenchTextSizeConstraint")
-		if not constraint then
-			constraint = Instance.new("UITextSizeConstraint")
-			constraint.Name = "FrenchTextSizeConstraint"
-			constraint.MinTextSize = math.min(12, originalSize)
-			constraint.MaxTextSize = originalSize
-			constraint.Parent = obj
-		end
-		obj.TextScaled = true
-		obj.TextWrapped = false
-	end
-
 	local function translateProperty(obj, prop)
 		if busy[obj] then
 			return
@@ -56,9 +35,6 @@ local function bootstrapFrenchLocalization()
 			pcall(function()
 				obj[prop] = translated
 			end)
-			if prop == "Text" then
-				fitTranslatedText(obj)
-			end
 			busy[obj] = nil
 		end
 	end
@@ -286,20 +262,20 @@ local function placeSpeedEdit()
 		if mine ~= editToken or not sub.Parent or not speedEdit.Parent then
 			return
 		end
-		local parent = speedEdit.Parent
-		local textWidth = sub.TextBounds.X
-		if textWidth <= 0 then
+		local scale = rootScale.Scale > 0 and rootScale.Scale or 1
+		local width = sub.TextBounds.X / scale
+		if width <= 0 then
 			return
 		end
-		local x = (sub.AbsolutePosition.X - parent.AbsolutePosition.X) + textWidth + 8
-		local y = (sub.AbsolutePosition.Y - parent.AbsolutePosition.Y) + sub.AbsoluteSize.Y / 2
-		speedEdit.Position = UDim2.fromOffset(math.ceil(x), math.ceil(y))
+		speedEdit.Position = UDim2.fromOffset(
+			sub.Position.X.Offset + math.ceil(width) + 8,
+			sub.Position.Y.Offset + sub.Size.Y.Offset / 2
+		)
 	end)
 end
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
 rows.Speed.sub:GetPropertyChangedSignal("TextBounds"):Connect(placeSpeedEdit)
-rows.Speed.sub:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeSpeedEdit)
-rows.Speed.sub:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeSpeedEdit)
+rootScale:GetPropertyChangedSignal("Scale"):Connect(placeSpeedEdit)
 placeSpeedEdit()
 
 local function attr(name)
@@ -582,43 +558,48 @@ for _, k in C.Keys do
 	end, false, k.Keyboard, k.Gamepad)
 end
 
-local rowHeight = 44
-for _, r in hints:GetChildren() do
-	if r:IsA("Frame") then
-		rowHeight = r.Size.Y.Offset
-		break
-	end
-end
+local function keepKeysOnScreen()
+	task.defer(function()
+		if not hints.Parent or not hints.Visible then
+			return
+		end
+		local camera = workspace.CurrentCamera
+		if not camera then
+			return
+		end
 
-local function fitKeys()
-	for _, r in hints:GetChildren() do
-		if r:IsA("Frame") then
-			local t = r:FindFirstChild("Text")
-			if t and (t:IsA("TextLabel") or t:IsA("TextButton")) then
-				t.TextScaled = true
-				t.TextWrapped = false
-				local limit = t:FindFirstChild("FrenchKeyTextConstraint")
-				if not limit then
-					limit = Instance.new("UITextSizeConstraint")
-					limit.Name = "FrenchKeyTextConstraint"
-					limit.MinTextSize = 12
-					limit.MaxTextSize = math.max(12, t.TextSize)
-					limit.Parent = t
-				end
+		local rightMost = hints.AbsolutePosition.X + hints.AbsoluteSize.X
+		for _, obj in hints:GetDescendants() do
+			if obj:IsA("GuiObject") and obj.Visible then
+				rightMost = math.max(rightMost, obj.AbsolutePosition.X + obj.AbsoluteSize.X)
 			end
 		end
-	end
+
+		local limit = camera.ViewportSize.X - 18
+		local overflow = rightMost - limit
+		if overflow > 0 then
+			local sc = hints:FindFirstChildOfClass("UIScale")
+			local scale = sc and sc.Scale > 0 and sc.Scale or 1
+			hints.Position = UDim2.new(
+				hints.Position.X.Scale,
+				hints.Position.X.Offset - math.ceil(overflow / scale),
+				hints.Position.Y.Scale,
+				hints.Position.Y.Offset
+			)
+		end
+	end)
 end
+
 for _, r in hints:GetChildren() do
 	local t = r:IsA("Frame") and r:FindFirstChild("Text")
 	if t then
-		t:GetPropertyChangedSignal("Text"):Connect(fitKeys)
+		t:GetPropertyChangedSignal("Text"):Connect(keepKeysOnScreen)
+		t:GetPropertyChangedSignal("TextBounds"):Connect(keepKeysOnScreen)
 	end
 end
-rootScale:GetPropertyChangedSignal("Scale"):Connect(function()
-	task.defer(fitKeys)
-end)
-fitKeys()
+rootScale:GetPropertyChangedSignal("Scale"):Connect(keepKeysOnScreen)
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(keepKeysOnScreen)
+keepKeysOnScreen()
 
 local function applyDevice()
 	local last = UIS:GetLastInputType()
@@ -636,6 +617,7 @@ local function applyDevice()
 			end
 		end
 	end
+	task.defer(keepKeysOnScreen)
 end
 applyDevice()
 UIS.LastInputTypeChanged:Connect(applyDevice)
