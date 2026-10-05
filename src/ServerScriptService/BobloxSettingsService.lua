@@ -2,7 +2,7 @@ local Players=game:GetService("Players")
 local Run=game:GetService("RunService")
 local M={}
 function M.Start(F)
- local C=require(F.Config) local R=F.Remote local DS=game:GetService("DataStoreService"):GetDataStore(C.StoreName)
+ local C=require(F.Config) local R=F:WaitForChild("Remote") local DS=game:GetService("DataStoreService"):GetDataStore(C.StoreName)
  local live=not Run:IsStudio() local states={}
  local function clean(key,value)
   local d=C.Defaults[key] if d==nil or type(d)~=type(value) then return nil end
