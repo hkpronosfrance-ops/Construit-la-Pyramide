@@ -253,6 +253,7 @@ do
 		require(RS:WaitForChild("BobloxSettings"):WaitForChild("Client")).open("MaxSpeed")
 	end)
 end
+local TextService = game:GetService("TextService")
 local editToken = 0
 local function placeSpeedEdit()
 	local sub = rows.Speed.sub
@@ -262,19 +263,25 @@ local function placeSpeedEdit()
 		if mine ~= editToken or not sub.Parent or not speedEdit.Parent then
 			return
 		end
-		local scale = rootScale.Scale > 0 and rootScale.Scale or 1
-		local width = sub.TextBounds.X / scale
-		if width <= 0 then
-			return
-		end
+
+		local width = TextService:GetTextSize(
+			sub.Text,
+			sub.TextSize,
+			sub.Font,
+			Vector2.new(1000, math.max(100, sub.AbsoluteSize.Y))
+		).X
+
+		-- The edit icon lives in the same Speed row as the sub-label.
+		-- Place it immediately after the rendered text, not after the label's full box.
+		speedEdit.AnchorPoint = Vector2.new(0, 0.5)
 		speedEdit.Position = UDim2.fromOffset(
-			sub.Position.X.Offset + math.ceil(width) + 8,
-			sub.Position.Y.Offset + sub.Size.Y.Offset / 2
+			sub.Position.X.Offset + math.ceil(width) + 6,
+			sub.Position.Y.Offset + math.floor(sub.Size.Y.Offset / 2)
 		)
 	end)
 end
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
-rows.Speed.sub:GetPropertyChangedSignal("TextBounds"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("TextSize"):Connect(placeSpeedEdit)
 rootScale:GetPropertyChangedSignal("Scale"):Connect(placeSpeedEdit)
 placeSpeedEdit()
 
@@ -558,48 +565,25 @@ for _, k in C.Keys do
 	end, false, k.Keyboard, k.Gamepad)
 end
 
-local function keepKeysOnScreen()
-	task.defer(function()
-		if not hints.Parent or not hints.Visible then
-			return
-		end
-		local camera = workspace.CurrentCamera
-		if not camera then
-			return
-		end
-
-		local rightMost = hints.AbsolutePosition.X + hints.AbsoluteSize.X
-		for _, obj in hints:GetDescendants() do
-			if obj:IsA("GuiObject") and obj.Visible then
-				rightMost = math.max(rightMost, obj.AbsolutePosition.X + obj.AbsoluteSize.X)
-			end
-		end
-
-		local limit = camera.ViewportSize.X - 18
-		local overflow = rightMost - limit
-		if overflow > 0 then
-			local sc = hints:FindFirstChildOfClass("UIScale")
-			local scale = sc and sc.Scale > 0 and sc.Scale or 1
-			hints.Position = UDim2.new(
-				hints.Position.X.Scale,
-				hints.Position.X.Offset - math.ceil(overflow / scale),
-				hints.Position.Y.Scale,
-				hints.Position.Y.Offset
-			)
-		end
-	end)
-end
-
-for _, r in hints:GetChildren() do
-	local t = r:IsA("Frame") and r:FindFirstChild("Text")
-	if t then
-		t:GetPropertyChangedSignal("Text"):Connect(keepKeysOnScreen)
-		t:GetPropertyChangedSignal("TextBounds"):Connect(keepKeysOnScreen)
+local hintsBasePosition = hints.Position
+local function placeFrenchKeys()
+	if L.isFrench() then
+		-- French action names are wider than "Pick Up" / "Drop".
+		-- Move the whole keyboard/gamepad block left while preserving its vertical position.
+		hints.Position = UDim2.new(
+			hintsBasePosition.X.Scale,
+			hintsBasePosition.X.Offset - 120,
+			hintsBasePosition.Y.Scale,
+			hintsBasePosition.Y.Offset
+		)
+	else
+		hints.Position = hintsBasePosition
 	end
 end
-rootScale:GetPropertyChangedSignal("Scale"):Connect(keepKeysOnScreen)
-workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(keepKeysOnScreen)
-keepKeysOnScreen()
+
+placeFrenchKeys()
+rootScale:GetPropertyChangedSignal("Scale"):Connect(placeFrenchKeys)
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(placeFrenchKeys)
 
 local function applyDevice()
 	local last = UIS:GetLastInputType()
@@ -617,7 +601,7 @@ local function applyDevice()
 			end
 		end
 	end
-	task.defer(keepKeysOnScreen)
+	task.defer(placeFrenchKeys)
 end
 applyDevice()
 UIS.LastInputTypeChanged:Connect(applyDevice)
