@@ -24,12 +24,18 @@ local FR_TEXT={
  ["MAX SPEED"]="VITESSE MAX",
  ["Low Effects"]="Effets réduits",
 }
+local localizedTextConnections=setmetatable({},{__mode="k"})
 local function localizeText(root)
  if not isFrench then return end
  local function apply(o)
-  if o:IsA("TextLabel") or o:IsA("TextButton") or o:IsA("TextBox") then
+  if not (o:IsA("TextLabel") or o:IsA("TextButton") or o:IsA("TextBox")) then return end
+  local function refresh()
    local t=FR_TEXT[o.Text]
-   if t then o.Text=t end
+   if t and o.Text~=t then o.Text=t end
+  end
+  refresh()
+  if not localizedTextConnections[o] then
+   localizedTextConnections[o]=o:GetPropertyChangedSignal("Text"):Connect(refresh)
   end
  end
  apply(root)
