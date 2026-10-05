@@ -5,7 +5,7 @@ local TextService=game:GetService("TextService")
 local TweenService=game:GetService("TweenService")
 local folder=script.Parent
 local C=require(folder.Config)
-local remote=folder.Remote
+local remote=folder:WaitForChild("Remote")
 local T=require(C.Theme)
 local p=Players.LocalPlayer
 local M={Authorized=false}
