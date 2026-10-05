@@ -3,6 +3,29 @@ local RS = game:GetService("ReplicatedStorage")
 local MPS = game:GetService("MarketplaceService")
 
 local folder = RS:WaitForChild("PyramidHUD")
+
+local function ensureChild(name, className)
+	local obj = folder:FindFirstChild(name)
+	if obj then
+		if obj.ClassName ~= className then
+			warn(("[PyramidHUD] %s exists as %s, expected %s"):format(name, obj.ClassName, className))
+		end
+		return obj
+	end
+	obj = Instance.new(className)
+	obj.Name = name
+	obj.Parent = folder
+	return obj
+end
+
+-- Create every non-script runtime object expected by the client before any client WaitForChild can stall.
+ensureChild("Action", "BindableEvent")
+ensureChild("GroupReward", "RemoteEvent")
+ensureChild("Training", "RemoteEvent")
+ensureChild("Upgrades", "RemoteEvent")
+ensureChild("Blocks", "RemoteEvent")
+ensureChild("Build", "RemoteEvent")
+
 local C = require(folder:WaitForChild("Config"))
 
 local DEFAULTS = {
