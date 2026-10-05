@@ -254,8 +254,27 @@ do
 	end)
 end
 local TextService = game:GetService("TextService")
+
+local function getFrenchOverlay()
+	local overlay = pg:FindFirstChild("PyramidFrenchOverlay")
+	if overlay then
+		return overlay
+	end
+	overlay = Instance.new("ScreenGui")
+	overlay.Name = "PyramidFrenchOverlay"
+	overlay.ResetOnSpawn = false
+	overlay.IgnoreGuiInset = gui.IgnoreGuiInset
+	overlay.DisplayOrder = math.max(gui.DisplayOrder, keysGui.DisplayOrder) + 5
+	overlay.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	overlay.Parent = pg
+	return overlay
+end
+
 local editToken = 0
 local function placeSpeedEdit()
+	if not L.isFrench() then
+		return
+	end
 	local sub = rows.Speed.sub
 	editToken += 1
 	local mine = editToken
@@ -264,26 +283,35 @@ local function placeSpeedEdit()
 			return
 		end
 
-		local width = TextService:GetTextSize(
-			sub.Text,
-			sub.TextSize,
-			sub.Font,
-			Vector2.new(1000, math.max(100, sub.AbsoluteSize.Y))
-		).X
-
-		-- Parent the edit icon directly to the rendered speed label.
-		-- This guarantees it always follows the final number (for example "... : 16").
-		if speedEdit.Parent ~= sub then
-			speedEdit.Parent = sub
+		local overlay = getFrenchOverlay()
+		if speedEdit.Parent ~= overlay then
+			speedEdit.Parent = overlay
 		end
+
+		local width = sub.TextBounds.X
+		if width <= 0 then
+			width = TextService:GetTextSize(
+				sub.Text,
+				sub.TextSize,
+				sub.Font,
+				Vector2.new(1000, math.max(100, sub.AbsoluteSize.Y))
+			).X
+		end
+
 		speedEdit.Visible = true
 		speedEdit.AnchorPoint = Vector2.new(0, 0.5)
-		speedEdit.Position = UDim2.fromOffset(math.ceil(width) + 6, math.floor(sub.Size.Y.Offset / 2))
-		speedEdit.ZIndex = math.max(speedEdit.ZIndex, sub.ZIndex + 1)
+		speedEdit.Position = UDim2.fromOffset(
+			math.ceil(sub.AbsolutePosition.X + width + 6),
+			math.ceil(sub.AbsolutePosition.Y + sub.AbsoluteSize.Y / 2)
+		)
+		speedEdit.ZIndex = 100
 	end)
 end
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
-rows.Speed.sub:GetPropertyChangedSignal("TextSize"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("TextBounds"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeSpeedEdit)
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(placeSpeedEdit)
 placeSpeedEdit()
 
 local function attr(name)
@@ -566,38 +594,53 @@ for _, k in C.Keys do
 	end, false, k.Keyboard, k.Gamepad)
 end
 
-local frenchKeyOffsets = {}
-local function shiftFrenchKeyRows()
-	if not L.isFrench() then
+local frenchKeysHolder
+local function setupFrenchKeysOverlay()
+	if not L.isFrench() or frenchKeysHolder then
 		return
 	end
 
-	for _, actionName in { "PickUp", "Drop" } do
+	local overlay = getFrenchOverlay()
+	local holder = Instance.new("Frame")
+	holder.Name = "FrenchKeys"
+	holder.AnchorPoint = Vector2.new(1, 1)
+	holder.Position = UDim2.new(1, -26, 1, -26)
+	holder.Size = UDim2.fromOffset(230, 92)
+	holder.BackgroundTransparency = 1
+	holder.ClipsDescendants = false
+	holder.ZIndex = 90
+	holder.Parent = overlay
+
+	local scale = Instance.new("UIScale")
+	scale.Name = "FrenchKeysScale"
+	scale.Scale = rootScale.Scale
+	scale.Parent = holder
+	rootScale:GetPropertyChangedSignal("Scale"):Connect(function()
+		scale.Scale = rootScale.Scale
+	end)
+
+	for index, actionName in { "PickUp", "Drop" } do
 		local row = hints:FindFirstChild(actionName)
-		if row then
-			for _, obj in row:GetDescendants() do
-				if obj:IsA("GuiObject") and (obj.Name == "Cap" or obj.Name == "Text") then
-					if not frenchKeyOffsets[obj] then
-						frenchKeyOffsets[obj] = obj.Position
-					end
-					local base = frenchKeyOffsets[obj]
-					obj.Position = UDim2.new(
-						base.X.Scale,
-						base.X.Offset - 130,
-						base.Y.Scale,
-						base.Y.Offset
-					)
-				end
+		if row and row:IsA("GuiObject") then
+			row.Parent = holder
+			row.AnchorPoint = Vector2.new(0, 0)
+			row.Position = UDim2.fromOffset(0, (index - 1) * 46)
+			row.Size = UDim2.fromOffset(230, 44)
+			row.ClipsDescendants = false
+			row.ZIndex = 91
+
+			local textLabel = row:FindFirstChild("Text")
+			if textLabel and textLabel:IsA("GuiObject") then
+				textLabel.Size = UDim2.new(1, -math.max(64, textLabel.Position.X.Offset) - 6, textLabel.Size.Y.Scale, textLabel.Size.Y.Offset)
+				textLabel.ClipsDescendants = false
 			end
 		end
 	end
+
+	frenchKeysHolder = holder
 end
 
-shiftFrenchKeyRows()
-hints.DescendantAdded:Connect(function()
-	task.defer(shiftFrenchKeyRows)
-end)
-rootScale:GetPropertyChangedSignal("Scale"):Connect(shiftFrenchKeyRows)
+setupFrenchKeysOverlay()
 
 local function applyDevice()
 	local last = UIS:GetLastInputType()
@@ -605,6 +648,9 @@ local function applyDevice()
 	local touch = last == Enum.UserInputType.Touch or (UIS.TouchEnabled and not UIS.KeyboardEnabled and not pad)
 	hints.Visible = not touch
 	touchKeys.Visible = touch
+	if frenchKeysHolder then
+		frenchKeysHolder.Visible = not touch
+	end
 	for _, kr in keyRows do
 		if pad then
 			kr.cap.Text = kr.def.PadLabel
@@ -615,7 +661,6 @@ local function applyDevice()
 			end
 		end
 	end
-	task.defer(shiftFrenchKeyRows)
 end
 applyDevice()
 UIS.LastInputTypeChanged:Connect(applyDevice)
