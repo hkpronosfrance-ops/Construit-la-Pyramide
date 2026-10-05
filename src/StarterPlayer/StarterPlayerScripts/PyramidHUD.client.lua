@@ -26,6 +26,11 @@ local FR_EXACT = {
 	["1.5x Speed"] = "1.5x Vitesse",
 	["2x Strength"] = "2x Force",
 	["FREE GIFT"] = "CADEAU GRATUIT",
+	["Coins"] = "Pièces",
+	["Speed"] = "Vitesse",
+	["Strength"] = "Force",
+	["Pyramids"] = "Pyramides",
+	["COINS"] = "PIÈCES",
 }
 
 local FR_PREFIX = {
@@ -462,7 +467,7 @@ local function refreshPyramid()
 	barText.Text = full(placed) .. " / " .. full(total)
 	local mult = site and site:GetAttribute("CoinsMultiplier") or 1
 	multLabel.Visible = mult > 1
-	multLabel.Text = (string.format("%.2f", mult):gsub("%.?0+$", "")) .. "x COINS"
+	multLabel.Text = (string.format("%.2f", mult):gsub("%.?0+$", "")) .. (isFrench and "x PIÈCES" or "x COINS")
 	local k = total > 0 and math.clamp(placed / total, 0, 1) or 0
 	TweenService:Create(fill, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { Size = UDim2.fromScale(k, 1) }):Play()
 end
