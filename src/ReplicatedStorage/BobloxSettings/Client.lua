@@ -1,6 +1,8 @@
 local Players=game:GetService("Players")
 local UIS=game:GetService("UserInputService")
 local SoundService=game:GetService("SoundService")
+local RunService=game:GetService("RunService")
+local LocalizationService=game:GetService("LocalizationService")
 local folder=script.Parent
 local C=require(folder.Config)
 local remote=folder.Remote
@@ -8,6 +10,32 @@ local T=require(C.Theme)
 local p=Players.LocalPlayer
 local M={}
 local rgb=Color3.fromRGB
+local isFrench=RunService:IsStudio()
+if not isFrench then
+ local ok,locale=pcall(function() return LocalizationService.RobloxLocaleId end)
+ if ok and type(locale)=="string" then isFrench=string.sub(string.lower(locale),1,2)=="fr" end
+end
+local FR_TEXT={
+ ["Settings"]="Paramètres",
+ ["Music"]="Musique",
+ ["Sound Effects"]="Effets sonores",
+ ["Volume"]="Volume",
+ ["Max Speed"]="Vitesse max",
+ ["MAX SPEED"]="VITESSE MAX",
+ ["Low Effects"]="Effets réduits",
+}
+local function localizeText(root)
+ if not isFrench then return end
+ local function apply(o)
+  if o:IsA("TextLabel") or o:IsA("TextButton") or o:IsA("TextBox") then
+   local t=FR_TEXT[o.Text]
+   if t then o.Text=t end
+  end
+ end
+ apply(root)
+ for _,o in root:GetDescendants() do apply(o) end
+ root.DescendantAdded:Connect(apply)
+end
 local S=table.clone(C.Defaults)
 local baseVolume=setmetatable({},{__mode="k"})
 local dimmed=setmetatable({},{__mode="k"})
@@ -115,6 +143,7 @@ local function slider(r,def)
  if def.Watch then p:GetAttributeChangedSignal(def.Watch):Connect(function() show(S[key]) end) end
 end
 local function wirePanel(gui)
+ localizeText(gui)
  backdrop=gui:WaitForChild("Backdrop")
  panel=gui:WaitForChild("Settings")
  panel.Visible=false backdrop.Visible=false
