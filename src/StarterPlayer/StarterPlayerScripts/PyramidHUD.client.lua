@@ -77,6 +77,10 @@ local gui = pg:WaitForChild("PyramidHUD")
 local friendGui = pg:WaitForChild("PyramidFriendBoost")
 local keysGui = pg:WaitForChild("PyramidKeys")
 
+watchStaticText(gui)
+watchStaticText(friendGui)
+watchStaticText(keysGui)
+
 for _, g in { gui, friendGui, keysGui } do
 	Tile.linkOutlines(g)
 end
