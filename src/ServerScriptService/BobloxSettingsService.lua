@@ -2,8 +2,9 @@ local Players=game:GetService("Players")
 local Run=game:GetService("RunService")
 local M={}
 function M.Start(F)
- local C=require(F.Config) local R=F:WaitForChild("Remote") local DS=game:GetService("DataStoreService"):GetDataStore(C.StoreName)
- local live=not Run:IsStudio() local states={}
+ local C=require(F.Config) local R=F:WaitForChild("Remote") local live=not Run:IsStudio()
+ local DS=live and game:GetService("DataStoreService"):GetDataStore(C.StoreName) or nil
+ local states={}
  local function clean(key,value)
   local d=C.Defaults[key] if d==nil or type(d)~=type(value) then return nil end
   if type(value)=="number" then if value~=value or math.abs(value)==math.huge then return nil end local r=C.Ranges and C.Ranges[key] return math.clamp(value,r and r[1] or 0,r and r[2] or 1) end

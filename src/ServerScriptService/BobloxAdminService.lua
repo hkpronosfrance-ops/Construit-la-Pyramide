@@ -6,9 +6,9 @@ local Http=game:GetService("HttpService")
 local M={}
 function M.Start(folder,adapter)
  local C=require(folder.Config) local remote=folder:WaitForChild("Remote")
- local bans=DS:GetDataStore(C.StorePrefix.."_Bans")
- local auditStore=DS:GetDataStore(C.StorePrefix.."_Audit")
  local live=not Run:IsStudio()
+ local bans=live and DS:GetDataStore(C.StorePrefix.."_Bans") or nil
+ local auditStore=live and DS:GetDataStore(C.StorePrefix.."_Audit") or nil
  local cache,rates,busy,history,memoryBans={},{},{},{},{}
  local function authorized(p)
   if not p then return false end

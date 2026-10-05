@@ -172,8 +172,7 @@ local function wireCommand(b)
   if b:GetAttribute("Confirm") then
    local caption=b:FindFirstChild("Caption")
    local label=caption and caption.Text or b.Name
-   confirm(label.." — "..(def:find("{player}",1,true) and selected and selected.name or "THIS SERVER").."
-"..cmd.."?",execute)
+    confirm(label.." — "..(def:find("{player}",1,true) and selected and selected.name or "THIS SERVER").."\n"..cmd.."?",execute)
   else execute() end
  end)
 end

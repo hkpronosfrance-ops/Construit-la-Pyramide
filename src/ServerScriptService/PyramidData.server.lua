@@ -1,12 +1,14 @@
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local DSS = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
 
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local U = require(folder:WaitForChild("UpgradesConfig"))
 
-local STORE = DSS:GetDataStore("BuildThePyramid_Players_v1")
+local LIVE = not RunService:IsStudio()
+local STORE = LIVE and DSS:GetDataStore("BuildThePyramid_Players_v1") or nil
 local VERSION = 1
 local AUTOSAVE = 60
 local RETRIES = 4
@@ -81,6 +83,9 @@ local function same(a, b)
 end
 
 local function save(p)
+	if not LIVE then
+		return true
+	end
 	if not loaded[p] then
 		return false
 	end
@@ -120,6 +125,14 @@ local function derive(p)
 end
 
 local function load(p)
+	if not LIVE then
+		receipts[p] = {}
+		derive(p)
+		loaded[p] = true
+		lastSaved[p] = nil
+		p:SetAttribute("DataLoaded", true)
+		return
+	end
 	local ok, data = retry(function()
 		return STORE:GetAsync(key(p))
 	end)
