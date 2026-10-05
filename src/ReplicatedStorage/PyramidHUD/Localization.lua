@@ -159,25 +159,38 @@ local EXACT = {
 	["GOD OF PYRAMIDS"] = "DIEU DES PYRAMIDES",
 }
 
-local function locale()
+local function locales()
+	local values = {}
+
 	local player = Players.LocalPlayer
 	if player then
 		local ok, value = pcall(function()
 			return player.LocaleId
 		end)
 		if ok and type(value) == "string" and value ~= "" then
-			return value:lower()
+			table.insert(values, value:lower())
 		end
 	end
 
-	local ok, value = pcall(function()
-		return LocalizationService.RobloxLocaleId
-	end)
-	return ok and tostring(value):lower() or "en-us"
+	for _, property in { "RobloxLocaleId", "SystemLocaleId" } do
+		local ok, value = pcall(function()
+			return LocalizationService[property]
+		end)
+		if ok and type(value) == "string" and value ~= "" then
+			table.insert(values, value:lower())
+		end
+	end
+
+	return values
 end
 
 function L.isFrench()
-	return locale():sub(1, 2) == "fr"
+	for _, value in locales() do
+		if value:sub(1, 2) == "fr" then
+			return true
+		end
+	end
+	return false
 end
 
 local function pattern(text, pat, replacement)
