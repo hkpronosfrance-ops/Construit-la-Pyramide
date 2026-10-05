@@ -260,36 +260,30 @@ local function placeSpeedEdit()
 	editToken += 1
 	local mine = editToken
 	task.defer(function()
-		if mine ~= editToken or not sub.Parent or not speedEdit.Parent then
+		if mine ~= editToken or not sub.Parent then
 			return
 		end
 
-		local scale = rootScale.Scale > 0 and rootScale.Scale or 1
-		local parent = speedEdit.Parent
-
-		local measured = TextService:GetTextSize(
+		local width = TextService:GetTextSize(
 			sub.Text,
 			sub.TextSize,
 			sub.Font,
 			Vector2.new(1000, math.max(100, sub.AbsoluteSize.Y))
 		).X
 
-		local localTextStartX = (sub.AbsolutePosition.X - parent.AbsolutePosition.X) / scale
-		local localTextCenterY = (sub.AbsolutePosition.Y - parent.AbsolutePosition.Y + sub.AbsoluteSize.Y / 2) / scale
-
+		-- Parent the edit icon directly to the rendered speed label.
+		-- This guarantees it always follows the final number (for example "... : 16").
+		if speedEdit.Parent ~= sub then
+			speedEdit.Parent = sub
+		end
 		speedEdit.Visible = true
 		speedEdit.AnchorPoint = Vector2.new(0, 0.5)
-		speedEdit.Position = UDim2.fromOffset(
-			math.ceil(localTextStartX + measured + 6),
-			math.ceil(localTextCenterY)
-		)
+		speedEdit.Position = UDim2.fromOffset(math.ceil(width) + 6, math.floor(sub.Size.Y.Offset / 2))
+		speedEdit.ZIndex = math.max(speedEdit.ZIndex, sub.ZIndex + 1)
 	end)
 end
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
 rows.Speed.sub:GetPropertyChangedSignal("TextSize"):Connect(placeSpeedEdit)
-rows.Speed.sub:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeSpeedEdit)
-rows.Speed.sub:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeSpeedEdit)
-rootScale:GetPropertyChangedSignal("Scale"):Connect(placeSpeedEdit)
 placeSpeedEdit()
 
 local function attr(name)
@@ -572,28 +566,38 @@ for _, k in C.Keys do
 	end, false, k.Keyboard, k.Gamepad)
 end
 
-local hintsBasePosition = hints.Position
-local hintsBaseAnchor = hints.AnchorPoint
-local function placeFrenchKeys()
-	if L.isFrench() then
-		-- Anchor the whole key-hint group to the right side and leave enough room
-		-- for longer French labels such as "Ramasser" and "Déposer".
-		hints.AnchorPoint = Vector2.new(1, hintsBaseAnchor.Y)
-		hints.Position = UDim2.new(
-			1,
-			-190,
-			hintsBasePosition.Y.Scale,
-			hintsBasePosition.Y.Offset
-		)
-	else
-		hints.AnchorPoint = hintsBaseAnchor
-		hints.Position = hintsBasePosition
+local frenchKeyOffsets = {}
+local function shiftFrenchKeyRows()
+	if not L.isFrench() then
+		return
+	end
+
+	for _, actionName in { "PickUp", "Drop" } do
+		local row = hints:FindFirstChild(actionName)
+		if row then
+			for _, obj in row:GetDescendants() do
+				if obj:IsA("GuiObject") and (obj.Name == "Cap" or obj.Name == "Text") then
+					if not frenchKeyOffsets[obj] then
+						frenchKeyOffsets[obj] = obj.Position
+					end
+					local base = frenchKeyOffsets[obj]
+					obj.Position = UDim2.new(
+						base.X.Scale,
+						base.X.Offset - 130,
+						base.Y.Scale,
+						base.Y.Offset
+					)
+				end
+			end
+		end
 	end
 end
 
-placeFrenchKeys()
-rootScale:GetPropertyChangedSignal("Scale"):Connect(placeFrenchKeys)
-workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(placeFrenchKeys)
+shiftFrenchKeyRows()
+hints.DescendantAdded:Connect(function()
+	task.defer(shiftFrenchKeyRows)
+end)
+rootScale:GetPropertyChangedSignal("Scale"):Connect(shiftFrenchKeyRows)
 
 local function applyDevice()
 	local last = UIS:GetLastInputType()
@@ -611,7 +615,7 @@ local function applyDevice()
 			end
 		end
 	end
-	task.defer(placeFrenchKeys)
+	task.defer(shiftFrenchKeyRows)
 end
 applyDevice()
 UIS.LastInputTypeChanged:Connect(applyDevice)
