@@ -9,79 +9,6 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
-local L = require(folder:WaitForChild("Localization"))
-
-local function bootstrapFrenchLocalization()
-	if not L.isFrench() then
-		return
-	end
-
-	local busy = setmetatable({}, { __mode = "k" })
-	local hooked = setmetatable({}, { __mode = "k" })
-
-	local function translateProperty(obj, prop)
-		if busy[obj] then
-			return
-		end
-		local ok, current = pcall(function()
-			return obj[prop]
-		end)
-		if not ok or type(current) ~= "string" or current == "" then
-			return
-		end
-		local translated = L.translate(current)
-		if translated ~= current then
-			busy[obj] = true
-			pcall(function()
-				obj[prop] = translated
-			end)
-			busy[obj] = nil
-		end
-	end
-
-	local function hook(obj)
-		if hooked[obj] then
-			return
-		end
-		if obj:IsA("TextLabel") or obj:IsA("TextButton") then
-			hooked[obj] = true
-			translateProperty(obj, "Text")
-			obj:GetPropertyChangedSignal("Text"):Connect(function()
-				translateProperty(obj, "Text")
-			end)
-		elseif obj:IsA("TextBox") then
-			hooked[obj] = true
-			translateProperty(obj, "PlaceholderText")
-			obj:GetPropertyChangedSignal("PlaceholderText"):Connect(function()
-				translateProperty(obj, "PlaceholderText")
-			end)
-		elseif obj:IsA("ProximityPrompt") then
-			hooked[obj] = true
-			translateProperty(obj, "ActionText")
-			translateProperty(obj, "ObjectText")
-			obj:GetPropertyChangedSignal("ActionText"):Connect(function()
-				translateProperty(obj, "ActionText")
-			end)
-			obj:GetPropertyChangedSignal("ObjectText"):Connect(function()
-				translateProperty(obj, "ObjectText")
-			end)
-		end
-	end
-
-	local function watch(root)
-		for _, obj in root:GetDescendants() do
-			hook(obj)
-		end
-		root.DescendantAdded:Connect(function(obj)
-			task.defer(hook, obj)
-		end)
-	end
-
-	watch(player:WaitForChild("PlayerGui"))
-	watch(workspace)
-end
-
-task.spawn(bootstrapFrenchLocalization)
 local Tile = require(folder:WaitForChild("TileStyle"))
 local action = folder:WaitForChild("Action")
 
@@ -162,16 +89,10 @@ local rootScale = gui:FindFirstChildOfClass("UIScale") or Instance.new("UIScale"
 rootScale.Parent = gui
 local function rescale()
 	local v = workspace.CurrentCamera.ViewportSize
-	if v.X < 100 or v.Y < 100 then
+	if v.X < 100 then
 		return
 	end
-
-	-- Keep the desktop HUD close to its authored size.
-	-- Studio panels reduce the available viewport height, so relying too heavily
-	-- on height makes the whole HUD appear much smaller than the original.
-	local widthScale = v.X / 1440
-	local heightScale = v.Y / 700
-	rootScale.Scale = math.clamp(math.min(widthScale, heightScale), 0.6, 1)
+	rootScale.Scale = math.clamp(math.min(v.X / 1500, v.Y / 860), 0.5, 1)
 end
 rescale()
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
@@ -244,7 +165,6 @@ for _, key in { "Coins", "Speed", "Strength", "Pyramids" } do
 end
 
 local speedEdit = stats.Speed:WaitForChild("SpeedEditIcon")
-local speedEditBasePosition = speedEdit.Position
 do
 	local face = speedEdit:WaitForChild("Icon")
 	local rest = face.ImageColor3
@@ -260,43 +180,26 @@ do
 		require(RS:WaitForChild("BobloxSettings"):WaitForChild("Client")).open("MaxSpeed")
 	end)
 end
-
-local TextService = game:GetService("TextService")
-local function measure(label, text)
-	return TextService:GetTextSize(
-		text,
-		label.TextSize,
-		label.Font,
-		Vector2.new(2000, math.max(100, label.AbsoluteSize.Y))
-	).X
-end
-
+local editToken = 0
 local function placeSpeedEdit()
 	local sub = rows.Speed.sub
-	task.defer(function()
-		if not sub.Parent or not speedEdit.Parent then
-			return
+	editToken += 1
+	local mine = editToken
+	task.spawn(function()
+		local TextService = game:GetService("TextService")
+		local params = Instance.new("GetTextBoundsParams")
+		params.Text = sub.Text
+		params.Font = sub.FontFace
+		params.Size = sub.TextSize
+		params.Width = 1000
+		local ok, bounds = pcall(TextService.GetTextBoundsAsync, TextService, params)
+		local width = ok and bounds.X or TextService:GetTextSize(sub.Text, sub.TextSize, sub.Font, Vector2.new(1000, 100)).X
+		if mine == editToken then
+			speedEdit.Position = UDim2.fromOffset(sub.Position.X.Offset + width + 8, sub.Position.Y.Offset + sub.Size.Y.Offset / 2)
 		end
-
-		local current = sub.Text
-		local value = current:match(":%s*(.+)$") or ""
-		local englishEquivalent = "Walk Speed: " .. value
-		local delta = measure(sub, current) - measure(sub, englishEquivalent)
-		local scale = rootScale.Scale > 0 and rootScale.Scale or 1
-
-		speedEdit.Visible = true
-		speedEdit.Position = UDim2.new(
-			speedEditBasePosition.X.Scale,
-			speedEditBasePosition.X.Offset + math.ceil(delta / scale),
-			speedEditBasePosition.Y.Scale,
-			speedEditBasePosition.Y.Offset
-		)
 	end)
 end
-
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
-rows.Speed.sub:GetPropertyChangedSignal("TextSize"):Connect(placeSpeedEdit)
-rootScale:GetPropertyChangedSignal("Scale"):Connect(placeSpeedEdit)
 placeSpeedEdit()
 
 local function attr(name)
@@ -555,8 +458,6 @@ end
 
 local hints = keysGui:WaitForChild("Keys")
 cornerScale(hints)
-local hintsBasePosition = hints.Position
-
 local touchKeys = keysGui:WaitForChild("TouchKeys")
 cornerScale(touchKeys)
 
@@ -565,12 +466,7 @@ for _, k in C.Keys do
 	local r = hints:FindFirstChild(k.Action)
 	local tb = touchKeys:FindFirstChild(k.Action)
 	if r then
-		table.insert(keyRows, {
-			row = r,
-			cap = r:WaitForChild("Cap"):WaitForChild("Key"),
-			text = r:FindFirstChild("Text"),
-			def = k,
-		})
+		table.insert(keyRows, { cap = r:WaitForChild("Cap"):WaitForChild("Key"), def = k })
 	end
 	if tb then
 		juicy(tb)
@@ -586,20 +482,41 @@ for _, k in C.Keys do
 	end, false, k.Keyboard, k.Gamepad)
 end
 
-local function positionKeyHints()
-	if L.isFrench() then
-		-- Keep the exact original graphics; only move the original group left
-		-- to make room for the longer French words.
-		hints.Position = UDim2.new(
-			hintsBasePosition.X.Scale,
-			hintsBasePosition.X.Offset - 125,
-			hintsBasePosition.Y.Scale,
-			hintsBasePosition.Y.Offset
-		)
-	else
-		hints.Position = hintsBasePosition
+local rowHeight = 44
+for _, r in hints:GetChildren() do
+	if r:IsA("Frame") then
+		rowHeight = r.Size.Y.Offset
+		break
 	end
 end
+local function fitKeys()
+	local w = 0
+	local sc = hints:FindFirstChildOfClass("UIScale")
+	local k = sc and sc.Scale > 0 and sc.Scale or 1
+	for _, r in hints:GetChildren() do
+		local t = r:IsA("Frame") and r:FindFirstChild("Text")
+		if t then
+			w = math.max(w, t.TextBounds.X / k)
+		end
+	end
+	w = math.ceil(54 + w + 4)
+	hints.Size = UDim2.fromOffset(w, hints.Size.Y.Offset)
+	for _, r in hints:GetChildren() do
+		if r:IsA("Frame") then
+			r.Size = UDim2.fromOffset(w, rowHeight)
+		end
+	end
+end
+for _, r in hints:GetChildren() do
+	local t = r:IsA("Frame") and r:FindFirstChild("Text")
+	if t then
+		t:GetPropertyChangedSignal("TextBounds"):Connect(fitKeys)
+	end
+end
+rootScale:GetPropertyChangedSignal("Scale"):Connect(function()
+	task.defer(fitKeys)
+end)
+fitKeys()
 
 local function applyDevice()
 	local last = UIS:GetLastInputType()
@@ -607,27 +524,19 @@ local function applyDevice()
 	local touch = last == Enum.UserInputType.Touch or (UIS.TouchEnabled and not UIS.KeyboardEnabled and not pad)
 	hints.Visible = not touch
 	touchKeys.Visible = touch
-
 	for _, kr in keyRows do
-		local value
 		if pad then
-			value = kr.def.PadLabel
+			kr.cap.Text = kr.def.PadLabel
 		else
-			value = UIS:GetStringForKeyCode(kr.def.Keyboard)
-			if value == "" then
-				value = kr.def.Keyboard.Name
+			kr.cap.Text = UIS:GetStringForKeyCode(kr.def.Keyboard)
+			if kr.cap.Text == "" then
+				kr.cap.Text = kr.def.Keyboard.Name
 			end
 		end
-		kr.cap.Text = value
 	end
-
-	positionKeyHints()
 end
-
 applyDevice()
 UIS.LastInputTypeChanged:Connect(applyDevice)
-rootScale:GetPropertyChangedSignal("Scale"):Connect(positionKeyHints)
-workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(positionKeyHints)
 
 for _, name in { C.Stats.Coins, C.Stats.Speed, C.Stats.Strength, C.Stats.Pyramids, C.Stats.Carrying, C.Stats.Capacity, "SpeedMultiplier", "StrengthMultiplier" } do
 	player:GetAttributeChangedSignal(name):Connect(refreshStats)
