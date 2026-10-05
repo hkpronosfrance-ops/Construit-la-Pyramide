@@ -126,18 +126,37 @@ local function scan(root)
 	end
 end
 
--- HUDs created from StarterGui.
-for _, name in { "PyramidHUD", "PyramidFriendBoost", "PyramidKeys" } do
+local watchedRoots = setmetatable({}, { __mode = "k" })
+
+local function watchRoot(root)
+	if watchedRoots[root] then
+		return
+	end
+	watchedRoots[root] = true
+	scan(root)
+	root.DescendantAdded:Connect(function(obj)
+		watchTextObject(obj)
+	end)
+end
+
+local HUD_NAMES = {
+	PyramidHUD = true,
+	PyramidFriendBoost = true,
+	PyramidKeys = true,
+}
+
+-- HUDs may already exist before this LocalScript starts, while their descendants
+-- are still being cloned/created. Watch both current and future descendants.
+for name in HUD_NAMES do
 	local gui = playerGui:FindFirstChild(name)
 	if gui then
-		scan(gui)
+		watchRoot(gui)
 	end
 end
 
 playerGui.ChildAdded:Connect(function(child)
-	if child.Name == "PyramidHUD" or child.Name == "PyramidFriendBoost" or child.Name == "PyramidKeys" then
-		scan(child)
-		child.DescendantAdded:Connect(watchTextObject)
+	if HUD_NAMES[child.Name] then
+		watchRoot(child)
 	end
 end)
 
