@@ -23,6 +23,7 @@ local function site()
 	local map = workspace:FindFirstChild("PyramidMap")
 	return map and map:FindFirstChild("PyramidSite")
 end
+
 do
 	local s = site()
 	if s then
