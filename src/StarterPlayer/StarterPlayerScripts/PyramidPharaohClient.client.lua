@@ -26,7 +26,10 @@ task.spawn(function()
 	end
 end)
 local map = workspace:WaitForChild("PyramidMap")
-local model = map:WaitForChild("Pharaoh")
+local model = map:FindFirstChild("Pharaoh")
+if not model then
+	return
+end
 local npc = model:WaitForChild("PharaohNPC")
 local hum = npc:WaitForChild("Humanoid")
 local animator = hum:WaitForChild("Animator")
