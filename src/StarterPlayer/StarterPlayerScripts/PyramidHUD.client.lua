@@ -272,6 +272,7 @@ end
 
 local frenchSpeedButton
 local function ensureFrenchSpeedButton()
+	warn("[FRHUD] ensureFrenchSpeedButton reached")
 	if frenchSpeedButton then
 		return frenchSpeedButton
 	end
@@ -687,6 +688,7 @@ local function createFrenchKeyRow(parent, y, keyText, actionText, accent)
 end
 
 local function setupFrenchKeysOverlay()
+	warn("[FRHUD] setupFrenchKeysOverlay start", "isFrench=", L.isFrench(), "existing=", frenchKeysHolder ~= nil)
 	if not L.isFrench() or frenchKeysHolder then
 		return
 	end
@@ -709,9 +711,15 @@ local function setupFrenchKeysOverlay()
 	frenchKeysHolder = holder
 end
 
-setupFrenchKeysOverlay()
+local okFrenchKeys, errFrenchKeys = xpcall(setupFrenchKeysOverlay, debug.traceback)
+if not okFrenchKeys then
+	warn("[FRHUD] setupFrenchKeysOverlay FAILED:\n" .. tostring(errFrenchKeys))
+else
+	warn("[FRHUD] setupFrenchKeysOverlay OK", frenchKeysHolder and frenchKeysHolder:GetFullName() or "nil")
+end
 
 local function applyDevice()
+	warn("[FRHUD] applyDevice reached")
 	local last = UIS:GetLastInputType()
 	local pad = last.Name:find("Gamepad") ~= nil
 	local touch = last == Enum.UserInputType.Touch or (UIS.TouchEnabled and not UIS.KeyboardEnabled and not pad)
