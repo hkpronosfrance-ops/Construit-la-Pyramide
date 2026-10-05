@@ -1,5 +1,6 @@
 local LocalizationService = game:GetService("LocalizationService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local L = {}
 
@@ -185,6 +186,9 @@ local function locales()
 end
 
 function L.isFrench()
+	if RunService:IsStudio() then
+		return true
+	end
 	for _, value in locales() do
 		if value:sub(1, 2) == "fr" then
 			return true
