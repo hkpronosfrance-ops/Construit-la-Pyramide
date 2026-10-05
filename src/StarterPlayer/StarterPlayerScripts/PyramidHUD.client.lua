@@ -77,32 +77,6 @@ local gui = pg:WaitForChild("PyramidHUD")
 local friendGui = pg:WaitForChild("PyramidFriendBoost")
 local keysGui = pg:WaitForChild("PyramidKeys")
 
-warn("[FRHUD] ROOTS", gui:GetFullName(), friendGui:GetFullName(), keysGui:GetFullName())
-watchStaticText(gui)
-watchStaticText(friendGui)
-watchStaticText(keysGui)
-
-task.defer(function()
-	local found = {}
-	for _, root in { gui, friendGui, keysGui } do
-		for _, obj in root:GetDescendants() do
-			if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-				local text = obj.Text
-				if text == "Pick Up" or text == "Drop" or text == "SAND SWEEPER"
-					or string.find(text, "Walk Speed", 1, true)
-					or string.find(text, "Capacity", 1, true)
-					or string.find(text, "Friend Boost", 1, true)
-					or string.find(text, "ONLY", 1, true) then
-					table.insert(found, obj:GetFullName() .. " = " .. text)
-				end
-			end
-		end
-	end
-	warn("[FRHUD] REMAINING", #found)
-	for _, line in found do
-		warn("[FRHUD] TARGET", line)
-	end
-end)
 for _, g in { gui, friendGui, keysGui } do
 	Tile.linkOutlines(g)
 end
@@ -374,7 +348,7 @@ for _, b in C.Boosts do
 	local function refresh()
 		local tier = C.nextTier(b, attr(b.Level))
 		livePrice(tier.ProductId, tier.Price, function(price)
-			priceText.Text = prefix(priceText, "ONLY ") .. full(price)
+			priceText.Text = (isFrench and "SEULEMENT " or prefix(priceText, "ONLY ")) .. full(price)
 		end, priceText)
 	end
 	boostRefresh[b.Level] = refresh
