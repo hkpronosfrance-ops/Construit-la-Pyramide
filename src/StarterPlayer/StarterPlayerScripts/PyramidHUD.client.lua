@@ -162,10 +162,16 @@ local rootScale = gui:FindFirstChildOfClass("UIScale") or Instance.new("UIScale"
 rootScale.Parent = gui
 local function rescale()
 	local v = workspace.CurrentCamera.ViewportSize
-	if v.X < 100 then
+	if v.X < 100 or v.Y < 100 then
 		return
 	end
-	rootScale.Scale = math.clamp(math.min(v.X / 1500, v.Y / 860), 0.5, 1)
+
+	-- Keep the desktop HUD close to its authored size.
+	-- Studio panels reduce the available viewport height, so relying too heavily
+	-- on height makes the whole HUD appear much smaller than the original.
+	local widthScale = v.X / 1440
+	local heightScale = v.Y / 700
+	rootScale.Scale = math.clamp(math.min(widthScale, heightScale), 0.6, 1)
 end
 rescale()
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
