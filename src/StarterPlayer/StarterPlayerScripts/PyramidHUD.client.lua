@@ -5,8 +5,59 @@ local CAS = game:GetService("ContextActionService")
 local MPS = game:GetService("MarketplaceService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local LocalizationService = game:GetService("LocalizationService")
 
 local player = Players.LocalPlayer
+
+local isFrench = RunService:IsStudio()
+if not isFrench then
+	local ok, locale = pcall(function()
+		return LocalizationService.RobloxLocaleId
+	end)
+	if ok and type(locale) == "string" then
+		isFrench = string.sub(string.lower(locale), 1, 2) == "fr"
+	end
+end
+
+local FR_EXACT = {
+	["Pick Up"] = "Ramasser",
+	["Drop"] = "Déposer",
+	["SAND SWEEPER"] = "BALAYEUR DE SABLE",
+	["1.5x Speed"] = "1.5x Vitesse",
+	["2x Strength"] = "2x Force",
+	["FREE GIFT"] = "CADEAU GRATUIT",
+}
+
+local FR_PREFIX = {
+	["Walk Speed: "] = "Vitesse de marche : ",
+	["Capacity: "] = "Capacité : ",
+	["Friend Boost: "] = "Bonus d'amis : ",
+	["ONLY "] = "SEULEMENT ",
+}
+
+local function localizeStaticTextObject(obj)
+	if not isFrench then
+		return
+	end
+	if not (obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox")) then
+		return
+	end
+	local translated = FR_EXACT[obj.Text]
+	if translated then
+		obj.Text = translated
+	end
+end
+
+local function watchStaticText(root)
+	if not isFrench then
+		return
+	end
+	localizeStaticTextObject(root)
+	for _, obj in root:GetDescendants() do
+		localizeStaticTextObject(obj)
+	end
+	root.DescendantAdded:Connect(localizeStaticTextObject)
+end
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local Tile = require(folder:WaitForChild("TileStyle"))
@@ -25,6 +76,10 @@ local pg = player:WaitForChild("PlayerGui")
 local gui = pg:WaitForChild("PyramidHUD")
 local friendGui = pg:WaitForChild("PyramidFriendBoost")
 local keysGui = pg:WaitForChild("PyramidKeys")
+
+watchStaticText(gui)
+watchStaticText(friendGui)
+watchStaticText(keysGui)
 for _, g in { gui, friendGui, keysGui } do
 	Tile.linkOutlines(g)
 end
@@ -55,7 +110,11 @@ end
 
 local function prefix(label, fallback)
 	local p = label:GetAttribute("Prefix")
-	return type(p) == "string" and p or fallback
+	local value = type(p) == "string" and p or fallback
+	if isFrench then
+		return FR_PREFIX[value] or value
+	end
+	return value
 end
 
 local function pop(obj)
@@ -117,7 +176,7 @@ local function prompt(productId)
 	if productId and productId > 0 then
 		MPS:PromptProductPurchase(player, productId)
 	else
-		say("Not available right now")
+		say(isFrench and "Indisponible pour le moment" or "Not available right now")
 	end
 end
 
@@ -559,6 +618,7 @@ local function applyCap()
 	end
 end
 local function watchHumanoid(ch)
+	watchStaticText(ch)
 	local h = ch:WaitForChild("Humanoid", 10)
 	if h then
 		h:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
