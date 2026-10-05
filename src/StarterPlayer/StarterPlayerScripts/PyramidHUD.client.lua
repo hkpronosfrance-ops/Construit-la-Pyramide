@@ -282,21 +282,22 @@ local function placeSpeedEdit()
 	local sub = rows.Speed.sub
 	editToken += 1
 	local mine = editToken
-	task.spawn(function()
-		local TextService = game:GetService("TextService")
-		local params = Instance.new("GetTextBoundsParams")
-		params.Text = sub.Text
-		params.Font = sub.FontFace
-		params.Size = sub.TextSize
-		params.Width = 1000
-		local ok, bounds = pcall(TextService.GetTextBoundsAsync, TextService, params)
-		local width = ok and bounds.X or TextService:GetTextSize(sub.Text, sub.TextSize, sub.Font, Vector2.new(1000, 100)).X
-		if mine == editToken then
-			speedEdit.Position = UDim2.fromOffset(sub.Position.X.Offset + width + 8, sub.Position.Y.Offset + sub.Size.Y.Offset / 2)
+	task.defer(function()
+		if mine ~= editToken or not sub.Parent then
+			return
 		end
+		local width = sub.TextBounds.X
+		if width <= 0 then
+			return
+		end
+		speedEdit.Position = UDim2.fromOffset(
+			sub.Position.X.Offset + math.ceil(width) + 8,
+			sub.Position.Y.Offset + sub.Size.Y.Offset / 2
+		)
 	end)
 end
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("TextBounds"):Connect(placeSpeedEdit)
 placeSpeedEdit()
 
 local function attr(name)
@@ -558,6 +559,8 @@ local hints = keysGui:WaitForChild("Keys")
 cornerScale(hints)
 local touchKeys = keysGui:WaitForChild("TouchKeys")
 cornerScale(touchKeys)
+touchKeys.AnchorPoint = Vector2.new(1, touchKeys.AnchorPoint.Y)
+touchKeys.Position = UDim2.new(1, -12, touchKeys.Position.Y.Scale, touchKeys.Position.Y.Offset)
 
 local keyRows = {}
 for _, k in C.Keys do
@@ -588,6 +591,7 @@ for _, r in hints:GetChildren() do
 	end
 end
 local hintsBasePosition = hints.Position
+local hintsBaseAnchor = hints.AnchorPoint
 local function fitKeys()
 	local w = 0
 	local sc = hints:FindFirstChildOfClass("UIScale")
@@ -606,27 +610,11 @@ local function fitKeys()
 		end
 	end
 
-	hints.Position = hintsBasePosition
-	task.defer(function()
-		if not hints.Parent then
-			return
-		end
-		local cam = workspace.CurrentCamera
-		if not cam then
-			return
-		end
-		local rightLimit = cam.ViewportSize.X - 12
-		local rightEdge = hints.AbsolutePosition.X + hints.AbsoluteSize.X
-		local overflow = math.max(0, rightEdge - rightLimit)
-		if overflow > 0 then
-			hints.Position = UDim2.new(
-				hintsBasePosition.X.Scale,
-				hintsBasePosition.X.Offset - math.ceil(overflow / k),
-				hintsBasePosition.Y.Scale,
-				hintsBasePosition.Y.Offset
-			)
-		end
-	end)
+	-- Pin the keyboard/gamepad hint block to the right edge.
+	-- French labels such as "Ramasser" are longer than their English originals,
+	-- so anchoring the whole container is more reliable than trying to correct overflow afterwards.
+	hints.AnchorPoint = Vector2.new(1, hintsBaseAnchor.Y)
+	hints.Position = UDim2.new(1, -12, hintsBasePosition.Y.Scale, hintsBasePosition.Y.Offset)
 end
 for _, r in hints:GetChildren() do
 	local t = r:IsA("Frame") and r:FindFirstChild("Text")
