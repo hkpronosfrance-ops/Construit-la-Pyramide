@@ -20,12 +20,40 @@ if not isFrench then
 end
 
 local FR_EXACT = {
+	["Settings"] = "Paramètres",
+	["FREE GIFT"] = "CADEAU GRATUIT",
+	["UPGRADES"] = "AMÉLIORATIONS",
+	["BLOCKS"] = "BLOCS",
+	["GYM"] = "SALLE",
+	["FREE"] = "GRATUIT",
+	["MOST STRENGTH"] = "PLUS DE FORCE",
+	["MOST SPEED"] = "PLUS DE VITESSE",
+	["MOST PYRAMIDS"] = "PLUS DE PYRAMIDES",
+	["MOST BLOCKS"] = "PLUS DE BLOCS",
+	["MOST COINS"] = "PLUS DE PIÈCES",
+	["Bench"] = "Banc",
+	["Train"] = "S'entraîner",
+	["Upgrades"] = "Améliorations",
+	["Bulk Pickup"] = "Ramassage groupé",
+	["1 Block Per Grab"] = "1 bloc par ramassage",
+	["Bulk Place"] = "Placement groupé",
+	["1 Block Per Place"] = "1 bloc par placement",
+	["Placement Range"] = "Portée de placement",
+	["+0% Place Range"] = "+0% portée de placement",
+	["Block"] = "Bloc",
 	["Pick Up"] = "Ramasser",
 	["Drop"] = "Déposer",
+	["YOUR RESULT"] = "VOTRE RÉSULTAT",
+	["Free Gift"] = "Cadeau gratuit",
+	["Open"] = "Ouvrir",
+	["Free Rewards"] = "Récompenses gratuites",
+	["Like the Game!"] = "Aimez le jeu !",
+	["Join Our Group!"] = "Rejoignez notre groupe !",
+	["+1,000 Coins!"] = "+1 000 pièces !",
+	["Locked"] = "Verrouillé",
 	["SAND SWEEPER"] = "BALAYEUR DE SABLE",
 	["1.5x Speed"] = "1.5x Vitesse",
 	["2x Strength"] = "2x Force",
-	["FREE GIFT"] = "CADEAU GRATUIT",
 	["Coins"] = "Pièces",
 	["Speed"] = "Vitesse",
 	["Strength"] = "Force",
@@ -40,16 +68,70 @@ local FR_PREFIX = {
 	["ONLY "] = "SEULEMENT ",
 }
 
+local localizedConnections = setmetatable({}, { __mode = "k" })
+
+local function translateFrench(text)
+	local exact = FR_EXACT[text]
+	if exact then
+		return exact
+	end
+
+	local n = text:match("^Requirement: (%d+) Pyramid$")
+	if n then
+		return "Requis : " .. n .. " pyramide"
+	end
+	n = text:match("^Requirement: (%d+) Pyramids$")
+	if n then
+		return "Requis : " .. n .. " pyramides"
+	end
+
+	local amount, plural = text:match("^([%d,]+) Block(s?) Per Grab$")
+	if amount then
+		return amount .. (plural == "s" and " blocs" or " bloc") .. " par ramassage"
+	end
+	amount, plural = text:match("^([%d,]+) Block(s?) Per Place$")
+	if amount then
+		return amount .. (plural == "s" and " blocs" or " bloc") .. " par placement"
+	end
+
+	local range = text:match("^%+(%d+)%% Place Range$")
+	if range then
+		return "+" .. range .. "% portée de placement"
+	end
+
+	local coins = text:match("^%+([%d,]+) Coins!$")
+	if coins then
+		return "+" .. coins:gsub(",", " ") .. " pièces !"
+	end
+
+	return nil
+end
+
 local function localizeStaticTextObject(obj)
 	if not isFrench then
 		return
 	end
-	if not (obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox")) then
-		return
-	end
-	local translated = FR_EXACT[obj.Text]
-	if translated then
-		obj.Text = translated
+
+	if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+		local function refresh()
+			local translated = translateFrench(obj.Text)
+			if translated and translated ~= obj.Text then
+				obj.Text = translated
+			end
+		end
+		refresh()
+		if not localizedConnections[obj] then
+			localizedConnections[obj] = obj:GetPropertyChangedSignal("Text"):Connect(refresh)
+		end
+	elseif obj:IsA("ProximityPrompt") then
+		local action = translateFrench(obj.ActionText)
+		if action then
+			obj.ActionText = action
+		end
+		local object = translateFrench(obj.ObjectText)
+		if object then
+			obj.ObjectText = object
+		end
 	end
 end
 
@@ -82,9 +164,18 @@ local gui = pg:WaitForChild("PyramidHUD")
 local friendGui = pg:WaitForChild("PyramidFriendBoost")
 local keysGui = pg:WaitForChild("PyramidKeys")
 
-watchStaticText(gui)
-watchStaticText(friendGui)
-watchStaticText(keysGui)
+watchStaticText(pg)
+local mapForLocalization = workspace:FindFirstChild("PyramidMap")
+if mapForLocalization then
+	watchStaticText(mapForLocalization)
+else
+	task.spawn(function()
+		local map = workspace:WaitForChild("PyramidMap", 30)
+		if map then
+			watchStaticText(map)
+		end
+	end)
+end
 
 for _, g in { gui, friendGui, keysGui } do
 	Tile.linkOutlines(g)
