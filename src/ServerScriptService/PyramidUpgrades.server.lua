@@ -1,0 +1,85 @@
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+
+local folder = RS:WaitForChild("PyramidHUD")
+local C = require(folder:WaitForChild("Config"))
+local U = require(folder:WaitForChild("UpgradesConfig"))
+
+local remote = folder:FindFirstChild("Upgrades") or Instance.new("RemoteEvent")
+remote.Name = "Upgrades"
+remote.Parent = folder
+
+local function apply(p, u, level)
+	p:SetAttribute(u.Level, level)
+	p:SetAttribute(u.Value, u.Effect(level))
+end
+
+local function onJoin(p)
+	for _, u in U.List do
+		local level = math.clamp(math.floor(tonumber(p:GetAttribute(u.Level)) or 1), 1, U.MaxLevel)
+		apply(p, u, level)
+	end
+end
+Players.PlayerAdded:Connect(onJoin)
+for _, p in Players:GetPlayers() do
+	onJoin(p)
+end
+
+local busy = {}
+remote.OnServerEvent:Connect(function(p, action, id, seen)
+	if action ~= "buy" or type(id) ~= "string" or busy[p] then
+		return
+	end
+	local u = U.get(id)
+	if not u then
+		return
+	end
+	busy[p] = true
+	local level = p:GetAttribute(u.Level) or 1
+	local price = U.Coins[level]
+	local coins = p:GetAttribute(C.Stats.Coins) or 0
+	if seen ~= level then
+		remote:FireClient(p, "denied", id)
+	elseif level >= U.MaxLevel or not price then
+		remote:FireClient(p, "denied", id, "Max level")
+	elseif coins < price then
+		remote:FireClient(p, "denied", id, "Not enough coins")
+	else
+		p:SetAttribute(C.Stats.Coins, coins - price)
+		apply(p, u, level + 1)
+		remote:FireClient(p, "bought", id)
+	end
+	task.wait(0.15)
+	busy[p] = nil
+end)
+Players.PlayerRemoving:Connect(function(p)
+	busy[p] = nil
+end)
+
+task.spawn(function()
+	local products
+	for _ = 1, 100 do
+		products = _G.PyramidProducts
+		if products then
+			break
+		end
+		task.wait(0.1)
+	end
+	if not products then
+		warn("[Upgrades] PyramidHUDService products table missing; Robux upgrades are off")
+		return
+	end
+	for _, u in U.List do
+		for index, productId in u.ProductIds do
+			if productId > 0 then
+				products[productId] = function(p)
+					local level = p:GetAttribute(u.Level) or 1
+					if level < U.MaxLevel and index >= level - 1 then
+						apply(p, u, level + 1)
+						remote:FireClient(p, "bought", u.Id)
+					end
+				end
+			end
+		end
+	end
+end)
