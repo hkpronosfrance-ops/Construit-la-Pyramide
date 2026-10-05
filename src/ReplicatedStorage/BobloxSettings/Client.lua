@@ -18,11 +18,15 @@ end
 local FR_TEXT={
  ["Settings"]="Paramètres",
  ["Music"]="Musique",
+ ["MUSIC"]="MUSIQUE",
  ["Sound Effects"]="Effets sonores",
+ ["SOUND EFFECTS"]="EFFETS SONORES",
  ["Volume"]="Volume",
+ ["VOLUME"]="VOLUME",
  ["Max Speed"]="Vitesse max",
  ["MAX SPEED"]="VITESSE MAX",
  ["Low Effects"]="Effets réduits",
+ ["LOW EFFECTS"]="EFFETS RÉDUITS",
 }
 local localizedTextConnections=setmetatable({},{__mode="k"})
 local function localizeText(root)
