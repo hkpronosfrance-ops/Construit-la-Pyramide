@@ -19,6 +19,27 @@ local function bootstrapFrenchLocalization()
 	local busy = setmetatable({}, { __mode = "k" })
 	local hooked = setmetatable({}, { __mode = "k" })
 
+	local function fitTranslatedText(obj)
+		if not (obj:IsA("TextLabel") or obj:IsA("TextButton")) then
+			return
+		end
+		if obj:GetAttribute("FrenchAutoFit") then
+			return
+		end
+		obj:SetAttribute("FrenchAutoFit", true)
+		local originalSize = math.max(12, obj.TextSize)
+		local constraint = obj:FindFirstChild("FrenchTextSizeConstraint")
+		if not constraint then
+			constraint = Instance.new("UITextSizeConstraint")
+			constraint.Name = "FrenchTextSizeConstraint"
+			constraint.MinTextSize = math.min(12, originalSize)
+			constraint.MaxTextSize = originalSize
+			constraint.Parent = obj
+		end
+		obj.TextScaled = true
+		obj.TextWrapped = false
+	end
+
 	local function translateProperty(obj, prop)
 		if busy[obj] then
 			return
@@ -35,6 +56,9 @@ local function bootstrapFrenchLocalization()
 			pcall(function()
 				obj[prop] = translated
 			end)
+			if prop == "Text" then
+				fitTranslatedText(obj)
+			end
 			busy[obj] = nil
 		end
 	end
