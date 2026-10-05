@@ -102,6 +102,7 @@ local EXACT = {
 	["Mine"] = "Mine",
 	["Gym"] = "Salle de sport",
 	["Free Gift"] = "Cadeau gratuit",
+	["FREE GIFT"] = "CADEAU GRATUIT",
 	["Group Reward"] = "Récompense de communauté",
 	["Join Group"] = "Rejoindre la communauté",
 	["Like Game"] = "Aimer le jeu",
