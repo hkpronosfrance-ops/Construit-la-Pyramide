@@ -542,6 +542,7 @@ end)
 bar:GetPropertyChangedSignal("AbsoluteSize"):Connect(avoidTopbar)
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
 	task.defer(avoidTopbar)
+	task.defer(fitKeys)
 end)
 
 local function cornerScale(frame)
@@ -586,6 +587,7 @@ for _, r in hints:GetChildren() do
 		break
 	end
 end
+local hintsBasePosition = hints.Position
 local function fitKeys()
 	local w = 0
 	local sc = hints:FindFirstChildOfClass("UIScale")
@@ -596,13 +598,35 @@ local function fitKeys()
 			w = math.max(w, t.TextBounds.X / k)
 		end
 	end
-	w = math.ceil(54 + w + 4)
+	w = math.ceil(54 + w + 10)
 	hints.Size = UDim2.fromOffset(w, hints.Size.Y.Offset)
 	for _, r in hints:GetChildren() do
 		if r:IsA("Frame") then
 			r.Size = UDim2.fromOffset(w, rowHeight)
 		end
 	end
+
+	hints.Position = hintsBasePosition
+	task.defer(function()
+		if not hints.Parent then
+			return
+		end
+		local cam = workspace.CurrentCamera
+		if not cam then
+			return
+		end
+		local rightLimit = cam.ViewportSize.X - 12
+		local rightEdge = hints.AbsolutePosition.X + hints.AbsoluteSize.X
+		local overflow = math.max(0, rightEdge - rightLimit)
+		if overflow > 0 then
+			hints.Position = UDim2.new(
+				hintsBasePosition.X.Scale,
+				hintsBasePosition.X.Offset - math.ceil(overflow / k),
+				hintsBasePosition.Y.Scale,
+				hintsBasePosition.Y.Offset
+			)
+		end
+	end)
 end
 for _, r in hints:GetChildren() do
 	local t = r:IsA("Frame") and r:FindFirstChild("Text")
