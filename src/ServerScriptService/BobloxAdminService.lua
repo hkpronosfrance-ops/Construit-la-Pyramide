@@ -5,7 +5,7 @@ local TextService=game:GetService("TextService")
 local Http=game:GetService("HttpService")
 local M={}
 function M.Start(folder,adapter)
- local C=require(folder.Config) local remote=folder.Remote
+ local C=require(folder.Config) local remote=folder:WaitForChild("Remote")
  local bans=DS:GetDataStore(C.StorePrefix.."_Bans")
  local auditStore=DS:GetDataStore(C.StorePrefix.."_Audit")
  local live=not Run:IsStudio()
