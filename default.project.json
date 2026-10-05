@@ -14,8 +14,12 @@
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
-      "$path": "src/StarterPlayer",
-      "$ignoreUnknownInstances": true
+      "$ignoreUnknownInstances": true,
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$path": "src/StarterPlayer/StarterPlayerScripts",
+        "$ignoreUnknownInstances": true
+      }
     },
     "Workspace": {
       "$className": "Workspace",
