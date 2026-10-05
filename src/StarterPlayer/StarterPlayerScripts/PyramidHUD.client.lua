@@ -736,7 +736,7 @@ local function applyDevice()
 			custom.Text = value
 		end
 	end
-nd
+end
 applyDevice()
 UIS.LastInputTypeChanged:Connect(applyDevice)
 
