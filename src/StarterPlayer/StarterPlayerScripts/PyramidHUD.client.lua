@@ -270,7 +270,55 @@ local function getFrenchOverlay()
 	return overlay
 end
 
+local frenchSpeedEdit
 local editToken = 0
+
+local function textStartX(label)
+	local bounds = label.TextBounds.X
+	if label.TextXAlignment == Enum.TextXAlignment.Center then
+		return label.AbsolutePosition.X + math.max(0, (label.AbsoluteSize.X - bounds) / 2)
+	elseif label.TextXAlignment == Enum.TextXAlignment.Right then
+		return label.AbsolutePosition.X + math.max(0, label.AbsoluteSize.X - bounds)
+	end
+	return label.AbsolutePosition.X
+end
+
+local function ensureFrenchSpeedEdit()
+	if frenchSpeedEdit then
+		return frenchSpeedEdit
+	end
+	local overlay = getFrenchOverlay()
+	frenchSpeedEdit = speedEdit:Clone()
+	frenchSpeedEdit.Name = "FrenchSpeedEditIcon"
+	frenchSpeedEdit.Parent = overlay
+	frenchSpeedEdit.Visible = true
+	frenchSpeedEdit.ZIndex = 100
+	for _, d in frenchSpeedEdit:GetDescendants() do
+		if d:IsA("GuiObject") then
+			d.ZIndex = math.max(d.ZIndex, 101)
+		end
+	end
+
+	local face = frenchSpeedEdit:FindFirstChild("Icon")
+	local hit = frenchSpeedEdit:FindFirstChild("Hit")
+	if face and hit and hit:IsA("GuiButton") then
+		local rest = face.ImageColor3
+		hit.MouseEnter:Connect(function()
+			face.ImageColor3 = rest:Lerp(WHITE, 0.6)
+		end)
+		hit.MouseLeave:Connect(function()
+			face.ImageColor3 = rest
+		end)
+		hit.Activated:Connect(function()
+			face.ImageColor3 = rest
+			require(RS:WaitForChild("BobloxSettings"):WaitForChild("Client")).open("MaxSpeed")
+		end)
+	end
+
+	speedEdit.Visible = false
+	return frenchSpeedEdit
+end
+
 local function placeSpeedEdit()
 	if not L.isFrench() then
 		return
@@ -283,30 +331,22 @@ local function placeSpeedEdit()
 			return
 		end
 
-		local overlay = getFrenchOverlay()
-		if speedEdit.Parent ~= overlay then
-			speedEdit.Parent = overlay
+		local clone = ensureFrenchSpeedEdit()
+		local size = speedEdit.AbsoluteSize
+		if size.X > 0 and size.Y > 0 then
+			clone.Size = UDim2.fromOffset(math.ceil(size.X), math.ceil(size.Y))
 		end
 
 		local width = sub.TextBounds.X
-		if width <= 0 then
-			width = TextService:GetTextSize(
-				sub.Text,
-				sub.TextSize,
-				sub.Font,
-				Vector2.new(1000, math.max(100, sub.AbsoluteSize.Y))
-			).X
-		end
-
-		speedEdit.Visible = true
-		speedEdit.AnchorPoint = Vector2.new(0, 0.5)
-		speedEdit.Position = UDim2.fromOffset(
-			math.ceil(sub.AbsolutePosition.X + width + 6),
+		local startX = textStartX(sub)
+		clone.AnchorPoint = Vector2.new(0, 0.5)
+		clone.Position = UDim2.fromOffset(
+			math.ceil(startX + width + 6),
 			math.ceil(sub.AbsolutePosition.Y + sub.AbsoluteSize.Y / 2)
 		)
-		speedEdit.ZIndex = 100
 	end)
 end
+
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
 rows.Speed.sub:GetPropertyChangedSignal("TextBounds"):Connect(placeSpeedEdit)
 rows.Speed.sub:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeSpeedEdit)
@@ -595,6 +635,8 @@ for _, k in C.Keys do
 end
 
 local frenchKeysHolder
+local frenchKeyRows = {}
+
 local function setupFrenchKeysOverlay()
 	if not L.isFrench() or frenchKeysHolder then
 		return
@@ -604,8 +646,8 @@ local function setupFrenchKeysOverlay()
 	local holder = Instance.new("Frame")
 	holder.Name = "FrenchKeys"
 	holder.AnchorPoint = Vector2.new(1, 1)
-	holder.Position = UDim2.new(1, -26, 1, -26)
-	holder.Size = UDim2.fromOffset(230, 92)
+	holder.Position = UDim2.new(1, -42, 1, -28)
+	holder.Size = UDim2.fromOffset(260, 96)
 	holder.BackgroundTransparency = 1
 	holder.ClipsDescendants = false
 	holder.ZIndex = 90
@@ -619,21 +661,53 @@ local function setupFrenchKeysOverlay()
 		scale.Scale = rootScale.Scale
 	end)
 
+	local translated = {
+		PickUp = "Ramasser",
+		Drop = "Déposer",
+	}
+
 	for index, actionName in { "PickUp", "Drop" } do
-		local row = hints:FindFirstChild(actionName)
-		if row and row:IsA("GuiObject") then
+		local original = hints:FindFirstChild(actionName)
+		if original and original:IsA("GuiObject") then
+			local row = original:Clone()
+			row.Name = "French" .. actionName
 			row.Parent = holder
 			row.AnchorPoint = Vector2.new(0, 0)
 			row.Position = UDim2.fromOffset(0, (index - 1) * 46)
-			row.Size = UDim2.fromOffset(230, 44)
+			row.Size = UDim2.fromOffset(260, 44)
 			row.ClipsDescendants = false
+			row.Visible = true
 			row.ZIndex = 91
 
-			local textLabel = row:FindFirstChild("Text")
-			if textLabel and textLabel:IsA("GuiObject") then
-				textLabel.Size = UDim2.new(1, -math.max(64, textLabel.Position.X.Offset) - 6, textLabel.Size.Y.Scale, textLabel.Size.Y.Offset)
-				textLabel.ClipsDescendants = false
+			local cap = row:FindFirstChild("Cap")
+			if cap and cap:IsA("GuiObject") then
+				cap.AnchorPoint = Vector2.new(0, 0.5)
+				cap.Position = UDim2.fromOffset(0, 22)
+				cap.ZIndex = 92
 			end
+
+			local textLabel = row:FindFirstChild("Text")
+			if textLabel and (textLabel:IsA("TextLabel") or textLabel:IsA("TextButton")) then
+				textLabel.Text = translated[actionName]
+				textLabel.AnchorPoint = Vector2.new(0, 0.5)
+				textLabel.Position = UDim2.fromOffset(58, 22)
+				textLabel.Size = UDim2.fromOffset(196, 40)
+				textLabel.TextXAlignment = Enum.TextXAlignment.Left
+				textLabel.TextYAlignment = Enum.TextYAlignment.Center
+				textLabel.TextScaled = false
+				textLabel.TextWrapped = false
+				textLabel.ClipsDescendants = false
+				textLabel.ZIndex = 92
+			end
+
+			local keyLabel = cap and cap:FindFirstChild("Key")
+			if keyLabel and (keyLabel:IsA("TextLabel") or keyLabel:IsA("TextButton")) then
+				keyLabel.Text = actionName == "PickUp" and "E" or "Q"
+				keyLabel.ZIndex = 93
+			end
+
+			original.Visible = false
+			frenchKeyRows[actionName] = row
 		end
 	end
 
@@ -646,18 +720,29 @@ local function applyDevice()
 	local last = UIS:GetLastInputType()
 	local pad = last.Name:find("Gamepad") ~= nil
 	local touch = last == Enum.UserInputType.Touch or (UIS.TouchEnabled and not UIS.KeyboardEnabled and not pad)
-	hints.Visible = not touch
+	hints.Visible = not touch and not L.isFrench()
 	touchKeys.Visible = touch
 	if frenchKeysHolder then
 		frenchKeysHolder.Visible = not touch
 	end
 	for _, kr in keyRows do
+		local value
 		if pad then
-			kr.cap.Text = kr.def.PadLabel
+			value = kr.def.PadLabel
 		else
-			kr.cap.Text = UIS:GetStringForKeyCode(kr.def.Keyboard)
-			if kr.cap.Text == "" then
-				kr.cap.Text = kr.def.Keyboard.Name
+			value = UIS:GetStringForKeyCode(kr.def.Keyboard)
+			if value == "" then
+				value = kr.def.Keyboard.Name
+			end
+		end
+		kr.cap.Text = value
+
+		if frenchKeysHolder then
+			local clonedRow = frenchKeyRows[kr.def.Action]
+			local clonedCap = clonedRow and clonedRow:FindFirstChild("Cap")
+			local clonedKey = clonedCap and clonedCap:FindFirstChild("Key")
+			if clonedKey and (clonedKey:IsA("TextLabel") or clonedKey:IsA("TextButton")) then
+				clonedKey.Text = value
 			end
 		end
 	end
