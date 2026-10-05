@@ -283,21 +283,23 @@ local function placeSpeedEdit()
 	editToken += 1
 	local mine = editToken
 	task.defer(function()
-		if mine ~= editToken or not sub.Parent then
+		if mine ~= editToken or not sub.Parent or not speedEdit.Parent then
 			return
 		end
-		local width = sub.TextBounds.X
-		if width <= 0 then
+		local parent = speedEdit.Parent
+		local textWidth = sub.TextBounds.X
+		if textWidth <= 0 then
 			return
 		end
-		speedEdit.Position = UDim2.fromOffset(
-			sub.Position.X.Offset + math.ceil(width) + 8,
-			sub.Position.Y.Offset + sub.Size.Y.Offset / 2
-		)
+		local x = (sub.AbsolutePosition.X - parent.AbsolutePosition.X) + textWidth + 8
+		local y = (sub.AbsolutePosition.Y - parent.AbsolutePosition.Y) + sub.AbsoluteSize.Y / 2
+		speedEdit.Position = UDim2.fromOffset(math.ceil(x), math.ceil(y))
 	end)
 end
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
 rows.Speed.sub:GetPropertyChangedSignal("TextBounds"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeSpeedEdit)
 placeSpeedEdit()
 
 local function attr(name)
@@ -543,7 +545,6 @@ end)
 bar:GetPropertyChangedSignal("AbsoluteSize"):Connect(avoidTopbar)
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
 	task.defer(avoidTopbar)
-	task.defer(fitKeys)
 end)
 
 local function cornerScale(frame)
@@ -559,8 +560,6 @@ local hints = keysGui:WaitForChild("Keys")
 cornerScale(hints)
 local touchKeys = keysGui:WaitForChild("TouchKeys")
 cornerScale(touchKeys)
-touchKeys.AnchorPoint = Vector2.new(1, touchKeys.AnchorPoint.Y)
-touchKeys.Position = UDim2.new(1, -12, touchKeys.Position.Y.Scale, touchKeys.Position.Y.Offset)
 
 local keyRows = {}
 for _, k in C.Keys do
@@ -590,36 +589,30 @@ for _, r in hints:GetChildren() do
 		break
 	end
 end
-local hintsBasePosition = hints.Position
-local hintsBaseAnchor = hints.AnchorPoint
+
 local function fitKeys()
-	local w = 0
-	local sc = hints:FindFirstChildOfClass("UIScale")
-	local k = sc and sc.Scale > 0 and sc.Scale or 1
-	for _, r in hints:GetChildren() do
-		local t = r:IsA("Frame") and r:FindFirstChild("Text")
-		if t then
-			w = math.max(w, t.TextBounds.X / k)
-		end
-	end
-	w = math.ceil(54 + w + 10)
-	hints.Size = UDim2.fromOffset(w, hints.Size.Y.Offset)
 	for _, r in hints:GetChildren() do
 		if r:IsA("Frame") then
-			r.Size = UDim2.fromOffset(w, rowHeight)
+			local t = r:FindFirstChild("Text")
+			if t and (t:IsA("TextLabel") or t:IsA("TextButton")) then
+				t.TextScaled = true
+				t.TextWrapped = false
+				local limit = t:FindFirstChild("FrenchKeyTextConstraint")
+				if not limit then
+					limit = Instance.new("UITextSizeConstraint")
+					limit.Name = "FrenchKeyTextConstraint"
+					limit.MinTextSize = 12
+					limit.MaxTextSize = math.max(12, t.TextSize)
+					limit.Parent = t
+				end
+			end
 		end
 	end
-
-	-- Pin the keyboard/gamepad hint block to the right edge.
-	-- French labels such as "Ramasser" are longer than their English originals,
-	-- so anchoring the whole container is more reliable than trying to correct overflow afterwards.
-	hints.AnchorPoint = Vector2.new(1, hintsBaseAnchor.Y)
-	hints.Position = UDim2.new(1, -12, hintsBasePosition.Y.Scale, hintsBasePosition.Y.Offset)
 end
 for _, r in hints:GetChildren() do
 	local t = r:IsA("Frame") and r:FindFirstChild("Text")
 	if t then
-		t:GetPropertyChangedSignal("TextBounds"):Connect(fitKeys)
+		t:GetPropertyChangedSignal("Text"):Connect(fitKeys)
 	end
 end
 rootScale:GetPropertyChangedSignal("Scale"):Connect(function()
