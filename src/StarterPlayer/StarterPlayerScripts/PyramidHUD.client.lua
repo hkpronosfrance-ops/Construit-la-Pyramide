@@ -60,6 +60,79 @@ local function watchStaticText(root)
 end
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
+local L = require(folder:WaitForChild("Localization"))
+
+local function bootstrapFrenchLocalization()
+	if not L.isFrench() then
+		return
+	end
+
+	local busy = setmetatable({}, { __mode = "k" })
+	local hooked = setmetatable({}, { __mode = "k" })
+
+	local function translateProperty(obj, prop)
+		if busy[obj] then
+			return
+		end
+		local ok, current = pcall(function()
+			return obj[prop]
+		end)
+		if not ok or type(current) ~= "string" or current == "" then
+			return
+		end
+		local translated = L.translate(current)
+		if translated ~= current then
+			busy[obj] = true
+			pcall(function()
+				obj[prop] = translated
+			end)
+			busy[obj] = nil
+		end
+	end
+
+	local function hook(obj)
+		if hooked[obj] then
+			return
+		end
+		if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+			hooked[obj] = true
+			translateProperty(obj, "Text")
+			obj:GetPropertyChangedSignal("Text"):Connect(function()
+				translateProperty(obj, "Text")
+			end)
+		elseif obj:IsA("TextBox") then
+			hooked[obj] = true
+			translateProperty(obj, "PlaceholderText")
+			obj:GetPropertyChangedSignal("PlaceholderText"):Connect(function()
+				translateProperty(obj, "PlaceholderText")
+			end)
+		elseif obj:IsA("ProximityPrompt") then
+			hooked[obj] = true
+			translateProperty(obj, "ActionText")
+			translateProperty(obj, "ObjectText")
+			obj:GetPropertyChangedSignal("ActionText"):Connect(function()
+				translateProperty(obj, "ActionText")
+			end)
+			obj:GetPropertyChangedSignal("ObjectText"):Connect(function()
+				translateProperty(obj, "ObjectText")
+			end)
+		end
+	end
+
+	local function watch(root)
+		for _, obj in root:GetDescendants() do
+			hook(obj)
+		end
+		root.DescendantAdded:Connect(function(obj)
+			task.defer(hook, obj)
+		end)
+	end
+
+	watch(player:WaitForChild("PlayerGui"))
+	watch(workspace)
+end
+
+task.spawn(bootstrapFrenchLocalization)
 local Tile = require(folder:WaitForChild("TileStyle"))
 local action = folder:WaitForChild("Action")
 
@@ -239,26 +312,99 @@ do
 		require(RS:WaitForChild("BobloxSettings"):WaitForChild("Client")).open("MaxSpeed")
 	end)
 end
-local editToken = 0
+local TextService = game:GetService("TextService")
+
+local function getFrenchOverlay()
+	local overlay = pg:FindFirstChild("PyramidFrenchOverlay")
+	if overlay then
+		return overlay
+	end
+	overlay = Instance.new("ScreenGui")
+	overlay.Name = "PyramidFrenchOverlay"
+	overlay.ResetOnSpawn = false
+	overlay.IgnoreGuiInset = gui.IgnoreGuiInset
+	overlay.DisplayOrder = math.max(gui.DisplayOrder, keysGui.DisplayOrder) + 20
+	overlay.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	overlay.Parent = pg
+	return overlay
+end
+
+local frenchSpeedButton
+local function ensureFrenchSpeedButton()
+	warn("[FRHUD] ensureFrenchSpeedButton reached")
+	if frenchSpeedButton then
+		return frenchSpeedButton
+	end
+
+	local overlay = getFrenchOverlay()
+	local sourceIcon = speedEdit:FindFirstChild("Icon")
+	local button = Instance.new("ImageButton")
+	button.Name = "FrenchSpeedEdit"
+	button.BackgroundTransparency = 1
+	button.AutoButtonColor = false
+	button.Size = UDim2.fromOffset(22, 22)
+	button.AnchorPoint = Vector2.new(0, 0.5)
+	button.ZIndex = 200
+	button.Parent = overlay
+
+	if sourceIcon and sourceIcon:IsA("ImageLabel") then
+		button.Image = sourceIcon.Image
+		button.ImageColor3 = sourceIcon.ImageColor3
+		button.ImageTransparency = sourceIcon.ImageTransparency
+		button.ScaleType = sourceIcon.ScaleType
+	end
+
+	local rest = button.ImageColor3
+	button.MouseEnter:Connect(function()
+		button.ImageColor3 = rest:Lerp(WHITE, 0.6)
+	end)
+	button.MouseLeave:Connect(function()
+		button.ImageColor3 = rest
+	end)
+	button.Activated:Connect(function()
+		button.ImageColor3 = rest
+		require(RS:WaitForChild("BobloxSettings"):WaitForChild("Client")).open("MaxSpeed")
+	end)
+
+	speedEdit.Visible = false
+	frenchSpeedButton = button
+	return button
+end
+
+local function textStartX(label)
+	local bounds = label.TextBounds.X
+	if label.TextXAlignment == Enum.TextXAlignment.Center then
+		return label.AbsolutePosition.X + math.max(0, (label.AbsoluteSize.X - bounds) / 2)
+	elseif label.TextXAlignment == Enum.TextXAlignment.Right then
+		return label.AbsolutePosition.X + math.max(0, label.AbsoluteSize.X - bounds)
+	end
+	return label.AbsolutePosition.X
+end
+
 local function placeSpeedEdit()
+	if not L.isFrench() then
+		return
+	end
 	local sub = rows.Speed.sub
-	editToken += 1
-	local mine = editToken
-	task.spawn(function()
-		local TextService = game:GetService("TextService")
-		local params = Instance.new("GetTextBoundsParams")
-		params.Text = sub.Text
-		params.Font = sub.FontFace
-		params.Size = sub.TextSize
-		params.Width = 1000
-		local ok, bounds = pcall(TextService.GetTextBoundsAsync, TextService, params)
-		local width = ok and bounds.X or TextService:GetTextSize(sub.Text, sub.TextSize, sub.Font, Vector2.new(1000, 100)).X
-		if mine == editToken then
-			speedEdit.Position = UDim2.fromOffset(sub.Position.X.Offset + width + 8, sub.Position.Y.Offset + sub.Size.Y.Offset / 2)
+	task.defer(function()
+		if not sub.Parent then
+			return
 		end
+		local button = ensureFrenchSpeedButton()
+		local width = sub.TextBounds.X
+		button.Position = UDim2.fromOffset(
+			math.ceil(textStartX(sub) + width + 5),
+			math.ceil(sub.AbsolutePosition.Y + sub.AbsoluteSize.Y / 2)
+		)
+		button.Visible = true
 	end)
 end
+
 rows.Speed.sub:GetPropertyChangedSignal("Text"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("TextBounds"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeSpeedEdit)
+rows.Speed.sub:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeSpeedEdit)
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(placeSpeedEdit)
 placeSpeedEdit()
 
 local function attr(name)
@@ -541,56 +687,120 @@ for _, k in C.Keys do
 	end, false, k.Keyboard, k.Gamepad)
 end
 
-local rowHeight = 44
-for _, r in hints:GetChildren() do
-	if r:IsA("Frame") then
-		rowHeight = r.Size.Y.Offset
-		break
-	end
+local frenchKeysHolder
+local frenchKeyCaps = {}
+
+local function createFrenchKeyRow(parent, y, keyText, actionText, accent)
+	local row = Instance.new("Frame")
+	row.BackgroundTransparency = 1
+	row.Size = UDim2.fromOffset(220, 40)
+	row.Position = UDim2.fromOffset(0, y)
+	row.ZIndex = 180
+	row.Parent = parent
+
+	local keyBox = Instance.new("TextLabel")
+	keyBox.Name = "Key"
+	keyBox.BackgroundColor3 = accent
+	keyBox.BorderSizePixel = 0
+	keyBox.Size = UDim2.fromOffset(36, 36)
+	keyBox.Position = UDim2.fromOffset(0, 2)
+	keyBox.Font = Enum.Font.FredokaOne
+	keyBox.Text = keyText
+	keyBox.TextScaled = true
+	keyBox.TextColor3 = Color3.new(1, 1, 1)
+	keyBox.ZIndex = 181
+	keyBox.Parent = row
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = keyBox
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 3
+	stroke.Color = Color3.fromRGB(20, 16, 28)
+	stroke.LineJoinMode = Enum.LineJoinMode.Round
+	stroke.Parent = keyBox
+
+	local textLabel = Instance.new("TextLabel")
+	textLabel.Name = "Text"
+	textLabel.BackgroundTransparency = 1
+	textLabel.Position = UDim2.fromOffset(48, 0)
+	textLabel.Size = UDim2.fromOffset(168, 40)
+	textLabel.Font = Enum.Font.FredokaOne
+	textLabel.Text = actionText
+	textLabel.TextSize = 27
+	textLabel.TextScaled = false
+	textLabel.TextWrapped = false
+	textLabel.TextXAlignment = Enum.TextXAlignment.Left
+	textLabel.TextYAlignment = Enum.TextYAlignment.Center
+	textLabel.TextColor3 = accent
+	textLabel.ZIndex = 181
+	textLabel.Parent = row
+
+	local textStroke = Instance.new("UIStroke")
+	textStroke.Thickness = 3
+	textStroke.Color = Color3.fromRGB(20, 16, 28)
+	textStroke.LineJoinMode = Enum.LineJoinMode.Round
+	textStroke.Parent = textLabel
+
+	return row, keyBox
 end
-local function fitKeys()
-	local w = 0
-	local sc = hints:FindFirstChildOfClass("UIScale")
-	local k = sc and sc.Scale > 0 and sc.Scale or 1
-	for _, r in hints:GetChildren() do
-		local t = r:IsA("Frame") and r:FindFirstChild("Text")
-		if t then
-			w = math.max(w, t.TextBounds.X / k)
-		end
+
+local function setupFrenchKeysOverlay()
+	warn("[FRHUD] setupFrenchKeysOverlay start", "isFrench=", L.isFrench(), "existing=", frenchKeysHolder ~= nil)
+	if not L.isFrench() or frenchKeysHolder then
+		return
 	end
-	w = math.ceil(54 + w + 4)
-	hints.Size = UDim2.fromOffset(w, hints.Size.Y.Offset)
-	for _, r in hints:GetChildren() do
-		if r:IsA("Frame") then
-			r.Size = UDim2.fromOffset(w, rowHeight)
-		end
-	end
+
+	local overlay = getFrenchOverlay()
+	local holder = Instance.new("Frame")
+	holder.Name = "FrenchKeys"
+	holder.AnchorPoint = Vector2.new(1, 1)
+	holder.Position = UDim2.new(1, -28, 1, -28)
+	holder.Size = UDim2.fromOffset(220, 86)
+	holder.BackgroundTransparency = 1
+	holder.ZIndex = 179
+	holder.Parent = overlay
+
+	local _, pickKey = createFrenchKeyRow(holder, 0, "E", "Ramasser", Color3.fromRGB(90, 240, 80))
+	local _, dropKey = createFrenchKeyRow(holder, 44, "Q", "Déposer", Color3.fromRGB(255, 100, 90))
+	frenchKeyCaps.PickUp = pickKey
+	frenchKeyCaps.Drop = dropKey
+
+	frenchKeysHolder = holder
 end
-for _, r in hints:GetChildren() do
-	local t = r:IsA("Frame") and r:FindFirstChild("Text")
-	if t then
-		t:GetPropertyChangedSignal("TextBounds"):Connect(fitKeys)
-	end
+
+local okFrenchKeys, errFrenchKeys = xpcall(setupFrenchKeysOverlay, debug.traceback)
+if not okFrenchKeys then
+	warn("[FRHUD] setupFrenchKeysOverlay FAILED:\n" .. tostring(errFrenchKeys))
+else
+	warn("[FRHUD] setupFrenchKeysOverlay OK", frenchKeysHolder and frenchKeysHolder:GetFullName() or "nil")
 end
-rootScale:GetPropertyChangedSignal("Scale"):Connect(function()
-	task.defer(fitKeys)
-end)
-fitKeys()
 
 local function applyDevice()
+	warn("[FRHUD] applyDevice reached")
 	local last = UIS:GetLastInputType()
 	local pad = last.Name:find("Gamepad") ~= nil
 	local touch = last == Enum.UserInputType.Touch or (UIS.TouchEnabled and not UIS.KeyboardEnabled and not pad)
-	hints.Visible = not touch
+	hints.Visible = not touch and not L.isFrench()
 	touchKeys.Visible = touch
+	if frenchKeysHolder then
+		frenchKeysHolder.Visible = not touch
+	end
 	for _, kr in keyRows do
+		local value
 		if pad then
-			kr.cap.Text = kr.def.PadLabel
+			value = kr.def.PadLabel
 		else
-			kr.cap.Text = UIS:GetStringForKeyCode(kr.def.Keyboard)
-			if kr.cap.Text == "" then
-				kr.cap.Text = kr.def.Keyboard.Name
+			value = UIS:GetStringForKeyCode(kr.def.Keyboard)
+			if value == "" then
+				value = kr.def.Keyboard.Name
 			end
+		end
+		kr.cap.Text = value
+		local custom = frenchKeyCaps[kr.def.Action]
+		if custom then
+			custom.Text = value
 		end
 	end
 end
