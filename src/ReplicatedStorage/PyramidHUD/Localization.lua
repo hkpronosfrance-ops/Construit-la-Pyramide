@@ -71,6 +71,10 @@ local EXACT = {
 	["Amethyst Pyramid"] = "Pyramide d'améthyste",
 	["Golden Pyramid"] = "Pyramide dorée",
 	["Diamond Pyramid"] = "Pyramide de diamant",
+	["SAPPHIRE PYRAMID"] = "PYRAMIDE DE SAPHIR",
+	["AMETHYST PYRAMID"] = "PYRAMIDE D'AMÉTHYSTE",
+	["GOLDEN PYRAMID"] = "PYRAMIDE DORÉE",
+	["DIAMOND PYRAMID"] = "PYRAMIDE DE DIAMANT",
 	["PHARAOH'S CHAMBER"] = "CHAMBRE DU PHARAON",
 	["TRAINING INSIDE"] = "ENTRAÎNEMENT À L'INTÉRIEUR",
 	["Not available right now"] = "Indisponible pour le moment",
@@ -186,6 +190,14 @@ function L.translate(text)
 		or pattern(text, "^Capacity:%s*(.+)$", "Capacité : %1")
 		or pattern(text, "^Friend Boost:%s*(.+)$", "Bonus d'amis : %1")
 		or pattern(text, "^ONLY%s+(.+)$", "SEULEMENT %1")
+		or pattern(text, "^([%d%.]+x)%s+Speed$", "%1 Vitesse")
+		or pattern(text, "^([%d%.]+x)%s+Strength$", "%1 Force")
+		or pattern(text, "^(%d+)%s+Minute$", "%1 minute")
+		or pattern(text, "^(%d+)%s+Minutes$", "%1 minutes")
+		or pattern(text, "^(%d+)%s+MIN$", "%1 MIN")
+		or pattern(text, "^(%d+)%s+MINS$", "%1 MIN")
+		or pattern(text, "^Requires%s+(.+)%s+Pyramids$", "Nécessite %1 pyramides")
+		or pattern(text, "^Requires%s+(.+)%s+Pyramid$", "Nécessite %1 pyramide")
 		or pattern(text, "^%+(.-)%s+Coins!$", "+%1 pièces !")
 		or pattern(text, "^%+(.-)%s+Coins$", "+%1 pièces")
 		or pattern(text, "^%+(.-)%s+Coin$", "+%1 pièce")
