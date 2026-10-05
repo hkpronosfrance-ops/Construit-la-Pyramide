@@ -1,2 +1,11 @@
 local RS = game:GetService("ReplicatedStorage")
-require(script.Parent.BobloxAdminService).Start(RS:WaitForChild("BobloxAdmin"), require(script.Parent.PyramidAdminAdapter))
+local folder = RS:WaitForChild("BobloxAdmin")
+
+local remote = folder:FindFirstChild("Remote")
+if not remote then
+	remote = Instance.new("RemoteEvent")
+	remote.Name = "Remote"
+	remote.Parent = folder
+end
+
+require(script.Parent.BobloxAdminService).Start(folder, require(script.Parent.PyramidAdminAdapter))
