@@ -1,10 +1,45 @@
 local Players = game:GetService("Players")
 local LocalizationService = game:GetService("LocalizationService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local locale = string.lower(LocalizationService.RobloxLocaleId or LocalizationService.SystemLocaleId or "en-us")
 
-if string.sub(locale, 1, 2) ~= "fr" then
+local function getLocale()
+	local candidates = {}
+
+	local okPlayer, playerLocale = pcall(function()
+		return player.LocaleId
+	end)
+	if okPlayer and type(playerLocale) == "string" then
+		table.insert(candidates, playerLocale)
+	end
+
+	if type(LocalizationService.RobloxLocaleId) == "string" then
+		table.insert(candidates, LocalizationService.RobloxLocaleId)
+	end
+	if type(LocalizationService.SystemLocaleId) == "string" then
+		table.insert(candidates, LocalizationService.SystemLocaleId)
+	end
+
+	for _, candidate in candidates do
+		local normalized = string.lower(candidate)
+		if string.sub(normalized, 1, 2) == "fr" then
+			return normalized
+		end
+	end
+
+	return string.lower(candidates[1] or "en-us")
+end
+
+local locale = getLocale()
+local isFrench = string.sub(locale, 1, 2) == "fr"
+
+-- Studio-only test override. Live players still use their real locale.
+if RunService:IsStudio() then
+	isFrench = true
+end
+
+if not isFrench then
 	return
 end
 
