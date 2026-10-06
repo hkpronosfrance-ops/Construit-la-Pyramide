@@ -70,6 +70,13 @@ local function build(p, head)
 			rankInk.Thickness = math.max(normalStrokeThickness, 3.2)
 			rankInk.Transparency = 0
 			gradient.Enabled = false
+
+			pulseTween = TweenService:Create(
+				rankScale,
+				TweenInfo.new(1.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+				{ Scale = 1.06 }
+			)
+			pulseTween:Play()
 		else
 			gradient.Enabled = true
 		end
