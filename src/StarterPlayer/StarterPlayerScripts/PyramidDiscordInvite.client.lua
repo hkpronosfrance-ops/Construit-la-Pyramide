@@ -174,7 +174,7 @@ end
 
 likeBtn.Text = isFrench and "Rejoins notre Discord !" or "Join our Discord!"
 joinBtn.Text = isFrench and "Lien officiel sur la page du jeu !" or "Official link on the game page!"
-amount.Text = isFrench and "💬 Communauté • Codes • Actus" or "💬 Community • Codes • News"
+amount.Text = isFrench and "Communauté • Codes • Actus" or "Community • Codes • News"
 hint.Text = isFrench
 	and "Retrouve le serveur officiel dans les liens sociaux de la page Roblox du jeu."
 	or "Find the official server in the Roblox game page social links."
