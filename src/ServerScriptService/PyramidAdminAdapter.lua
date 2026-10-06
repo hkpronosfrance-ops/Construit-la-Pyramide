@@ -2,6 +2,7 @@ local RS = game:GetService("ReplicatedStorage")
 local folder = RS.PyramidHUD
 local C = require(folder.Config)
 local U = require(folder.UpgradesConfig)
+local ServerBoosts = require(script.Parent:WaitForChild("PyramidServerBoosts"))
 
 local ADD = { coins = C.Stats.Coins, strength = C.Stats.Strength, speed = C.Stats.Speed }
 local SET = {
@@ -88,6 +89,29 @@ return {
 			assert(s:GetAttribute("ChamberOpen"), "The chamber is already closed.")
 			s:SetAttribute("ChamberOpen", false)
 			return "Chamber closed; the next pyramid is drawn."
+		end
+
+		if action == "serverboost" then
+			local kind = ServerBoosts.Resolve(args[1])
+			assert(kind, "Use speed, coins, strength, pyramids or all.")
+			local multiplier = ctx.number(args[2], 1, 100, false)
+			local minutes = ctx.number(args[3], 0.1, 1440, false)
+			ServerBoosts.Set(kind, multiplier, minutes * 60)
+			return ("Server boost %s x%s for %s min."):format(kind, tostring(multiplier), tostring(minutes))
+		end
+		if action == "serverboostoff" then
+			local kind = ServerBoosts.Resolve(args[1] or "all")
+			assert(kind, "Use speed, coins, strength, pyramids or all.")
+			ServerBoosts.Stop(kind)
+			return "Server boost stopped: " .. kind .. "."
+		end
+		if action == "serverbooststatus" then
+			local parts = {}
+			for _, kind in { "speed", "coins", "strength", "pyramids" } do
+				local multiplier, seconds = ServerBoosts.Status(kind)
+				table.insert(parts, ("%s x%s (%ds)"):format(kind, tostring(multiplier), math.ceil(seconds)))
+			end
+			return table.concat(parts, " | ")
 		end
 
 		local p = ctx.player(args[1])

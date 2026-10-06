@@ -537,6 +537,144 @@ function M.start()
    pageServer.CanvasSize=pageServer.CanvasSize+UDim2.fromOffset(0,108)
   end
 
+  -- Timed server-wide multipliers.
+  local boost=Instance.new("Frame")
+  boost.Name="ServerMultipliers"
+  boost.Size=UDim2.new(1,-8,0,184)
+  boost.Position=UDim2.fromOffset(4,112)
+  boost.BackgroundColor3=rgb(24,27,37)
+  boost.BorderSizePixel=0
+  boost.ZIndex=20
+  boost.Parent=pageServer
+  local boostCorner=Instance.new("UICorner") boostCorner.CornerRadius=UDim.new(0,8) boostCorner.Parent=boost
+  local boostStroke=Instance.new("UIStroke") boostStroke.Color=rgb(94,112,255) boostStroke.Thickness=2 boostStroke.Transparency=.12 boostStroke.Parent=boost
+  local boostGrad=Instance.new("UIGradient")
+  boostGrad.Color=ColorSequence.new({ColorSequenceKeypoint.new(0,rgb(35,39,57)),ColorSequenceKeypoint.new(1,rgb(22,24,33))})
+  boostGrad.Rotation=90 boostGrad.Parent=boost
+
+  local boostTitle=Instance.new("TextLabel")
+  boostTitle.BackgroundTransparency=1 boostTitle.Position=UDim2.fromOffset(10,6) boostTitle.Size=UDim2.new(1,-20,0,16)
+  boostTitle.Font=Enum.Font.GothamBold boostTitle.TextSize=11 boostTitle.TextXAlignment=Enum.TextXAlignment.Left
+  boostTitle.TextColor3=rgb(154,166,255) boostTitle.Text=isFrench and "MULTIPLICATEURS SERVEUR" or "SERVER MULTIPLIERS"
+  boostTitle.ZIndex=21 boostTitle.Parent=boost
+
+  local boostDesc=Instance.new("TextLabel")
+  boostDesc.BackgroundTransparency=1 boostDesc.Position=UDim2.fromOffset(10,22) boostDesc.Size=UDim2.new(1,-20,0,13)
+  boostDesc.Font=Enum.Font.Gotham boostDesc.TextSize=9 boostDesc.TextXAlignment=Enum.TextXAlignment.Left
+  boostDesc.TextColor3=rgb(195,199,214)
+  boostDesc.Text=isFrench and "Valeur et durée appliquées à tous les joueurs de ce serveur." or "Value and duration apply to every player in this server."
+  boostDesc.ZIndex=21 boostDesc.Parent=boost
+
+  local function makeField(name,x,w,labelText,defaultText)
+   local label=Instance.new("TextLabel")
+   label.BackgroundTransparency=1 label.Position=UDim2.fromOffset(x,40) label.Size=UDim2.fromOffset(w,12)
+   label.Font=Enum.Font.GothamBold label.TextSize=8 label.TextXAlignment=Enum.TextXAlignment.Left
+   label.TextColor3=rgb(150,155,174) label.Text=labelText label.ZIndex=21 label.Parent=boost
+   local box=Instance.new("TextBox")
+   box.Name=name box.Position=UDim2.fromOffset(x,53) box.Size=UDim2.fromOffset(w,28)
+   box.BackgroundColor3=rgb(13,15,22) box.BorderSizePixel=0 box.ClearTextOnFocus=false
+   box.Text=defaultText box.PlaceholderText=defaultText box.Font=Enum.Font.GothamBold box.TextSize=11
+   box.TextColor3=Color3.new(1,1,1) box.PlaceholderColor3=rgb(120,125,142) box.ZIndex=22 box.Parent=boost
+   local corner=Instance.new("UICorner") corner.CornerRadius=UDim.new(0,5) corner.Parent=box
+   local stroke=Instance.new("UIStroke") stroke.Color=rgb(81,87,109) stroke.Transparency=.25 stroke.Parent=box
+   return box
+  end
+  local multBox=makeField("Multiplier",10,86,isFrench and "MULTIPLICATEUR" or "MULTIPLIER","2")
+  local durationBox=makeField("Duration",104,96,isFrench and "DURÉE (MIN)" or "DURATION (MIN)","10")
+
+  local function serverButton(name,textValue,xScale,wScale,color)
+   local b=T.button(boost,name,textValue,UDim2.new(xScale,4,0,88),UDim2.new(wScale,-8,0,28),color)
+   b.ZIndex=22
+   return b
+  end
+  local speedButton=serverButton("ServerSpeed",isFrench and "VITESSE" or "SPEED",0,.2,rgb(55,165,255))
+  local coinsButton=serverButton("ServerCoins",isFrench and "PIÈCES" or "COINS",.2,.2,rgb(255,188,35))
+  local strengthButton=serverButton("ServerStrength",isFrench and "FORCE" or "STRENGTH",.4,.2,rgb(239,90,75))
+  local pyramidsButton=serverButton("ServerPyramids",isFrench and "PYRAMIDES" or "PYRAMIDS",.6,.2,rgb(176,83,239))
+  local allButton=serverButton("ServerAll",isFrench and "TOUT" or "ALL",.8,.2,rgb(58,205,105))
+
+  local applyHint=Instance.new("TextLabel")
+  applyHint.BackgroundTransparency=1 applyHint.Position=UDim2.fromOffset(10,120) applyHint.Size=UDim2.new(1,-116,0,15)
+  applyHint.Font=Enum.Font.Gotham applyHint.TextSize=8 applyHint.TextXAlignment=Enum.TextXAlignment.Left
+  applyHint.TextColor3=rgb(166,171,190)
+  applyHint.Text=isFrench and "Un nouveau lancement remplace le timer du même bonus." or "Starting the same boost again replaces its timer."
+  applyHint.ZIndex=21 applyHint.Parent=boost
+
+  local stopButton=T.button(boost,"StopServerBoosts",isFrench and "ARRÊTER TOUT" or "STOP ALL",
+   UDim2.new(1,-104,0,119),UDim2.fromOffset(94,28),rgb(198,48,48))
+  stopButton.AnchorPoint=Vector2.new(0,0) stopButton.ZIndex=22
+
+  local activeStatus=Instance.new("TextLabel")
+  activeStatus.Name="ActiveStatus" activeStatus.BackgroundTransparency=1 activeStatus.Position=UDim2.fromOffset(10,148)
+  activeStatus.Size=UDim2.new(1,-20,0,28) activeStatus.Font=Enum.Font.GothamBold activeStatus.TextSize=8
+  activeStatus.TextWrapped=true activeStatus.TextXAlignment=Enum.TextXAlignment.Left activeStatus.TextYAlignment=Enum.TextYAlignment.Top
+  activeStatus.TextColor3=rgb(135,244,160) activeStatus.Text=isFrench and "Aucun multiplicateur actif." or "No active multiplier."
+  activeStatus.ZIndex=21 activeStatus.Parent=boost
+
+  for _,child in pageServer:GetChildren() do
+   if child~=announce and child~=boost and child:IsA("GuiObject") then
+    child.Position=child.Position+UDim2.fromOffset(0,190)
+   end
+  end
+  if pageServer:IsA("ScrollingFrame") then
+   pageServer.CanvasSize=pageServer.CanvasSize+UDim2.fromOffset(0,190)
+  end
+
+  local function startServerBoost(kind)
+   local multiplier=tonumber((multBox.Text or ""):gsub(",","."))
+   local minutes=tonumber((durationBox.Text or ""):gsub(",","."))
+   if not multiplier or multiplier<1 or multiplier>100 then
+    log(isFrench and "Multiplicateur invalide (1 à 100)." or "Invalid multiplier (1 to 100).",WARN)
+    return
+   end
+   if not minutes or minutes<.1 or minutes>1440 then
+    log(isFrench and "Durée invalide (0.1 à 1440 minutes)." or "Invalid duration (0.1 to 1440 minutes).",WARN)
+    return
+   end
+   send(("%s serverboost %s %s %s"):format(PREFIX,kind,tostring(multiplier),tostring(minutes)))
+  end
+  speedButton.Activated:Connect(function() startServerBoost("speed") end)
+  coinsButton.Activated:Connect(function() startServerBoost("coins") end)
+  strengthButton.Activated:Connect(function() startServerBoost("strength") end)
+  pyramidsButton.Activated:Connect(function() startServerBoost("pyramids") end)
+  allButton.Activated:Connect(function() startServerBoost("all") end)
+  stopButton.Activated:Connect(function() send(PREFIX.." serverboostoff all") end)
+
+  local hud=game:GetService("ReplicatedStorage"):WaitForChild("PyramidHUD")
+  local boostDefs={
+   {key="Speed",fr="Vitesse",en="Speed"},
+   {key="Coins",fr="Pièces",en="Coins"},
+   {key="Strength",fr="Force",en="Strength"},
+   {key="Pyramids",fr="Pyramides",en="Pyramids"},
+  }
+  local function formatLeft(seconds)
+   seconds=math.max(0,math.ceil(seconds))
+   local mins=math.floor(seconds/60)
+   local secs=seconds%60
+   if mins>=60 then
+    local hours=math.floor(mins/60)
+    mins=mins%60
+    return string.format("%dh%02d",hours,mins)
+   end
+   return string.format("%d:%02d",mins,secs)
+  end
+  task.spawn(function()
+   while boost.Parent do
+    local now=workspace:GetServerTimeNow()
+    local active={}
+    for _,def in boostDefs do
+     local multiplier=tonumber(hud:GetAttribute("ServerBoost"..def.key.."Multiplier")) or 1
+     local endsAt=tonumber(hud:GetAttribute("ServerBoost"..def.key.."End")) or 0
+     if multiplier>1 and endsAt>now then
+      table.insert(active,("%s x%s • %s"):format(isFrench and def.fr or def.en,tostring(multiplier),formatLeft(endsAt-now)))
+     end
+    end
+    activeStatus.Text=#active>0 and table.concat(active,"   |   ") or (isFrench and "Aucun multiplicateur actif." or "No active multiplier.")
+    activeStatus.TextColor3=#active>0 and rgb(135,244,160) or rgb(150,155,174)
+    task.wait(.5)
+   end
+  end)
+
   local statusToken=0
   local function setStatus(textValue,color)
    statusToken+=1
