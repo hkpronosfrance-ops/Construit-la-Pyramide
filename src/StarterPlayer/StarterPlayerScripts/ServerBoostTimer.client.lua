@@ -133,29 +133,44 @@ local function makeCard(def, order)
 	icon.ZIndex = 6
 	icon.Parent = fill
 
-	local title = Instance.new("TextLabel")
-	title.Name = "Title"
-	title.BackgroundTransparency = 1
-	title.Position = UDim2.fromOffset(49,5)
-	title.Size = UDim2.fromOffset(71,22)
-	title.Font = Enum.Font.FredokaOne
-	title.TextScaled = true
-	title.TextColor3 = Color3.new(1,1,1)
-	title.TextStrokeColor3 = Tile.Ink
-	title.TextStrokeTransparency = 0
-	title.TextXAlignment = Enum.TextXAlignment.Center
-	title.ZIndex = 7
-	title.Parent = fill
-	local limit = Instance.new("UITextSizeConstraint")
-	limit.MaxTextSize = 17
-	limit.MinTextSize = 8
-	limit.Parent = title
+	local multiplierLabel = Instance.new("TextLabel")
+	multiplierLabel.Name = "Multiplier"
+	multiplierLabel.BackgroundTransparency = 1
+	multiplierLabel.Position = UDim2.fromOffset(48,4)
+	multiplierLabel.Size = UDim2.fromOffset(72,15)
+	multiplierLabel.Font = Enum.Font.FredokaOne
+	multiplierLabel.TextScaled = false
+	multiplierLabel.TextSize = 13
+	multiplierLabel.TextColor3 = Color3.new(1,1,1)
+	multiplierLabel.TextStrokeColor3 = Tile.Ink
+	multiplierLabel.TextStrokeTransparency = 0
+	multiplierLabel.TextXAlignment = Enum.TextXAlignment.Center
+	multiplierLabel.TextYAlignment = Enum.TextYAlignment.Center
+	multiplierLabel.ZIndex = 7
+	multiplierLabel.Parent = fill
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "Name"
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Position = UDim2.fromOffset(48,18)
+	nameLabel.Size = UDim2.fromOffset(72,12)
+	nameLabel.Font = Enum.Font.FredokaOne
+	nameLabel.TextScaled = false
+	nameLabel.TextSize = 9
+	nameLabel.TextColor3 = Color3.new(1,1,1)
+	nameLabel.TextStrokeColor3 = Tile.Ink
+	nameLabel.TextStrokeTransparency = 0
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Center
+	nameLabel.TextYAlignment = Enum.TextYAlignment.Center
+	nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	nameLabel.ZIndex = 7
+	nameLabel.Parent = fill
 
 	local timerBack = Instance.new("Frame")
 	timerBack.Name = "TimerBack"
 	timerBack.AnchorPoint = Vector2.new(0.5,0)
-	timerBack.Position = UDim2.new(0,86,0,29)
-	timerBack.Size = UDim2.fromOffset(64,16)
+	timerBack.Position = UDim2.new(0,86,0,32)
+	timerBack.Size = UDim2.fromOffset(64,15)
 	timerBack.BackgroundColor3 = rgb(13,47,20)
 	timerBack.BackgroundTransparency = 0.08
 	timerBack.BorderSizePixel = 0
@@ -175,7 +190,7 @@ local function makeCard(def, order)
 	timer.Size = UDim2.fromScale(1,1)
 	timer.BackgroundTransparency = 1
 	timer.Font = Enum.Font.GothamBlack
-	timer.TextSize = 9
+	timer.TextSize = 8
 	timer.TextColor3 = rgb(110,255,125)
 	timer.TextStrokeColor3 = rgb(5,25,8)
 	timer.TextStrokeTransparency = 0.25
@@ -195,7 +210,13 @@ local function makeCard(def, order)
 	accentCorner.CornerRadius = UDim.new(1,0)
 	accentCorner.Parent = accent
 
-	cards[def.key] = { frame = card, title = title, timer = timer, def = def }
+	cards[def.key] = {
+		frame = card,
+		multiplier = multiplierLabel,
+		name = nameLabel,
+		timer = timer,
+		def = def,
+	}
 end
 
 for i, def in defs do makeCard(def,i) end
@@ -225,7 +246,8 @@ local function refresh()
 		card.frame.Visible = on
 		if on then
 			active += 1
-			card.title.Text = fmtMult(mult).."x "..(isFrench and def.fr or def.en)
+			card.multiplier.Text = fmtMult(mult).."x"
+			card.name.Text = isFrench and def.fr or def.en
 			card.timer.Text = fmtTime(remain)
 		end
 	end
