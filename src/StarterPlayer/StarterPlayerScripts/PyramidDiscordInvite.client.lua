@@ -28,6 +28,7 @@ local DISCORD_BLURPLE_DARK = rgb(68, 78, 199)
 local DISCORD_SURFACE = rgb(49, 51, 56)
 local DISCORD_SURFACE_DARK = rgb(30, 31, 34)
 local DISCORD_CARD = rgb(64, 68, 75)
+local DISCORD_LOGO_ASSET = "rbxassetid://75755133922844"
 
 local function gradientPair(obj, topColor, bottomColor, rotation)
 	local g = obj:FindFirstChildOfClass("UIGradient") or Instance.new("UIGradient")
@@ -55,76 +56,25 @@ local function makeDiscordHeaderIcon(header)
 	local old = header:FindFirstChild("DiscordHeaderIcon")
 	if old then old:Destroy() end
 
-	local holder = Instance.new("Frame")
-	holder.Name = "DiscordHeaderIcon"
-	holder.BackgroundTransparency = 1
-	holder.AnchorPoint = Vector2.new(0, 0.5)
-	holder.Position = UDim2.new(0, -1, 0.5, 0)
-	holder.Size = UDim2.fromOffset(80, 66)
-	holder.ZIndex = header.ZIndex + 5
-	holder.Parent = header
+	-- Use the exact user-uploaded Discord PNG so the header logo is pixel-faithful
+	-- to the supplied artwork rather than a Roblox-shape approximation.
+	local icon = Instance.new("ImageLabel")
+	icon.Name = "DiscordHeaderIcon"
+	icon.BackgroundTransparency = 1
+	icon.AnchorPoint = Vector2.new(0, 0.5)
+	icon.Position = UDim2.new(0, -2, 0.5, 0)
+	icon.Size = UDim2.fromOffset(82, 68)
+	icon.Image = DISCORD_LOGO_ASSET
+	icon.ScaleType = Enum.ScaleType.Fit
+	icon.ImageColor3 = WHITE
+	icon.ImageTransparency = 0
+	icon.ZIndex = header.ZIndex + 6
+	icon.Parent = header
 
-	local outline = Instance.new("Frame")
-	outline.Name = "Outline"
-	outline.AnchorPoint = Vector2.new(0.5, 0.5)
-	outline.Position = UDim2.fromScale(0.5, 0.52)
-	outline.Size = UDim2.fromScale(0.84, 0.70)
-	outline.BackgroundColor3 = rgb(20, 24, 45)
-	outline.BorderSizePixel = 0
-	outline.ZIndex = holder.ZIndex
-	outline.Parent = holder
-	addRound(outline, 18)
-
-	local body = Instance.new("Frame")
-	body.Name = "Body"
-	body.AnchorPoint = Vector2.new(0.5, 0.5)
-	body.Position = UDim2.fromScale(0.5, 0.48)
-	body.Size = UDim2.fromScale(0.76, 0.62)
-	body.BackgroundColor3 = DISCORD_BLURPLE_LIGHT
-	body.BorderSizePixel = 0
-	body.ZIndex = holder.ZIndex + 1
-	body.Parent = holder
-	addRound(body, 16)
-	gradientPair(body, rgb(126, 145, 255), DISCORD_BLURPLE, 90)
-
-	local function ear(x, rotation)
-		local e = Instance.new("Frame")
-		e.AnchorPoint = Vector2.new(0.5, 0.5)
-		e.Position = UDim2.fromScale(x, 0.24)
-		e.Size = UDim2.fromScale(0.18, 0.18)
-		e.BackgroundColor3 = DISCORD_BLURPLE_LIGHT
-		e.BorderSizePixel = 0
-		e.Rotation = rotation
-		e.ZIndex = holder.ZIndex + 1
-		e.Parent = holder
-		addRound(e, 6)
-	end
-	ear(0.28, -24)
-	ear(0.72, 24)
-
-	local function eye(x)
-		local e = Instance.new("Frame")
-		e.AnchorPoint = Vector2.new(0.5, 0.5)
-		e.Position = UDim2.fromScale(x, 0.49)
-		e.Size = UDim2.fromScale(0.12, 0.16)
-		e.BackgroundColor3 = rgb(35, 52, 143)
-		e.BorderSizePixel = 0
-		e.ZIndex = holder.ZIndex + 2
-		e.Parent = holder
-		addRound(e, 99)
-	end
-	eye(0.40)
-	eye(0.60)
-
-	local smile = Instance.new("Frame")
-	smile.AnchorPoint = Vector2.new(0.5, 0.5)
-	smile.Position = UDim2.fromScale(0.50, 0.65)
-	smile.Size = UDim2.fromScale(0.30, 0.07)
-	smile.BackgroundColor3 = rgb(35, 52, 143)
-	smile.BorderSizePixel = 0
-	smile.ZIndex = holder.ZIndex + 2
-	smile.Parent = holder
-	addRound(smile, 99)
+	local aspect = Instance.new("UIAspectRatioConstraint")
+	aspect.AspectRatio = 1
+	aspect.DominantAxis = Enum.DominantAxis.Height
+	aspect.Parent = icon
 end
 
 local function applyDiscordBranding(panel, header, likeBtn, joinBtn, claim, prize)
