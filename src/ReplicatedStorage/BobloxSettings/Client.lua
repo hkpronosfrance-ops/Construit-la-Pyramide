@@ -66,7 +66,9 @@ local function hook(o)
  if o:IsA("Sound") then applySound(o) elseif S.LowEffects then effectOff(o) end
 end
 local function applyAll()
- for s in baseVolume do if s.Parent then applySound(s) end end
+ for _,o in SoundService:GetDescendants() do
+  if o:IsA("Sound") then applySound(o) end
+ end
  p:SetAttribute("LowEffects",S.LowEffects==true) p:SetAttribute("StrengthPopups",S.StrengthPopups~=false)
  if S.LowEffects then
   for _,o in workspace:GetDescendants() do effectOff(o) end
