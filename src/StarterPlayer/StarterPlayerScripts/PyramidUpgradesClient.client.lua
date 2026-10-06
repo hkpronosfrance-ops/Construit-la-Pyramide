@@ -41,7 +41,8 @@ local function attrOr(o, name, fallback)
 	return v
 end
 
-local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidUpgrades")
+local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidUpgrades", 30)
+if not gui then return end
 local backdrop = gui:WaitForChild("Backdrop")
 local panel = gui:WaitForChild("Upgrades")
 panel.Visible = false
