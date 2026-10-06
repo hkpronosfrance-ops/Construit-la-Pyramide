@@ -101,7 +101,8 @@ local function annFade(alpha)
  annText.TextTransparency=alpha if annEdge then annEdge.Transparency=alpha end annAvatar.ImageTransparency=alpha annAvatar.BackgroundTransparency=alpha if annRing then annRing.Transparency=alpha end
 end
 local function wireAnnouncement(pg)
- local annGui=pg:WaitForChild("AnnouncementLine")
+ local annGui=pg:WaitForChild("AnnouncementLine",30)
+ if not annGui then return end
  annRow=annGui:WaitForChild("Announcement") annRow.Visible=false
  annScale=annRow:FindFirstChildOfClass("UIScale") or Instance.new("UIScale",annRow)
  annAvatar=annRow:WaitForChild("Avatar") annRing=annAvatar:FindFirstChildOfClass("UIStroke")

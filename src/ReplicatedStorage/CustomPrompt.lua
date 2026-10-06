@@ -7,7 +7,8 @@ function S.start(options)
  local Run=game:GetService("RunService")
  local p=Players.LocalPlayer
  local pg=p:WaitForChild("PlayerGui")
- local root=pg:WaitForChild("CustomInteractionUI")
+ local root=pg:WaitForChild("CustomInteractionUI",30)
+ if not root then return end
  if root:GetAttribute("Started") then return end
  root:SetAttribute("Started",true)
  local template=root:WaitForChild("PromptTemplate")

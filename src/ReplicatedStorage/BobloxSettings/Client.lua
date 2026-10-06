@@ -191,7 +191,9 @@ end
 function M.start()
  if built then return M end built=true
  local pg=p:WaitForChild("PlayerGui")
- wirePanel(pg:WaitForChild("SettingsPanel"))
+ local settingsPanel=pg:WaitForChild("SettingsPanel",30)
+ if not settingsPanel then return M end
+ wirePanel(settingsPanel)
  cornerButtons(pg)
  workspace.DescendantAdded:Connect(hook) pg.DescendantAdded:Connect(hook) SoundService.DescendantAdded:Connect(hook)
  for _,o in SoundService:GetDescendants() do hook(o) end

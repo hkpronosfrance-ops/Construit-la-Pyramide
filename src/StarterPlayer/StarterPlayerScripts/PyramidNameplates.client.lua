@@ -8,7 +8,8 @@ local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local R = require(folder:WaitForChild("Ranks"))
 
-local holder = player:WaitForChild("PlayerGui"):WaitForChild("PyramidNameplates")
+local holder = player:WaitForChild("PlayerGui"):WaitForChild("PyramidNameplates", 30)
+if not holder then return end
 local template = holder:WaitForChild("PlateTemplate")
 template.Enabled = false
 
@@ -64,22 +65,13 @@ local function build(p, head)
 		rank.TextColor3 = normalTextColor
 
 		if on then
-			rank.TextColor3 = Color3.new(1, 1, 1)
-			rankInk.Color = Color3.fromRGB(255, 235, 200)
+			rank.TextColor3 = Color3.fromRGB(235, 35, 35)
+			rankInk.Color = Color3.fromRGB(0, 0, 0)
 			rankInk.Thickness = math.max(normalStrokeThickness, 3.2)
 			rankInk.Transparency = 0
-			pulseTween = TweenService:Create(
-				rankScale,
-				TweenInfo.new(1.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-				{ Scale = 1.045 }
-			)
-			shineTween = TweenService:Create(
-				gradient,
-				TweenInfo.new(2.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-				{ Offset = Vector2.new(0.16, 0) }
-			)
-			pulseTween:Play()
-			shineTween:Play()
+			gradient.Enabled = false
+		else
+			gradient.Enabled = true
 		end
 	end
 	local name = bb:WaitForChild("PlayerName")

@@ -99,7 +99,8 @@ game:GetService("RunService").Heartbeat:Connect(function()
 	end
 end)
 
-local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidBlocks")
+local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidBlocks", 30)
+if not gui then return end
 local msg = gui:WaitForChild("Message")
 msg.Visible = false
 local popupTemplate = gui:WaitForChild("BlockPopupTemplate")
