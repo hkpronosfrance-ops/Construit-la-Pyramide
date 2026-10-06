@@ -631,6 +631,30 @@ RunService.RenderStepped:Connect(function()
 end)
 
 local offers = top:WaitForChild("Fill")
+
+-- Bottom-center pyramid progress layout:
+-- purchase buttons above, progress bar below.
+local originalBarPosition = bar.Position
+local originalOffersPosition = offers.Position
+local function layoutPyramidProgressBottom()
+	top.AnchorPoint = Vector2.new(0.5, 1)
+	top.Position = UDim2.new(0.5, 0, 1, -18)
+
+	bar.Position = UDim2.new(
+		originalBarPosition.X.Scale,
+		originalBarPosition.X.Offset,
+		originalOffersPosition.Y.Scale,
+		originalOffersPosition.Y.Offset
+	)
+	offers.Position = UDim2.new(
+		originalOffersPosition.X.Scale,
+		originalOffersPosition.X.Offset,
+		originalBarPosition.Y.Scale,
+		originalBarPosition.Y.Offset
+	)
+end
+layoutPyramidProgressBottom()
+
 local offerButtons = {}
 local chamberMode = false
 local site
@@ -713,44 +737,15 @@ local function refreshPyramid()
 	TweenService:Create(fill, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { Size = UDim2.fromScale(k, 1) }):Play()
 end
 
-local topY = top.Position.Y.Offset
-local function avoidTopbar()
-	local tb = pg:FindFirstChild("GameTopbar")
-	local left, right = -math.huge, math.huge
-	if tb then
-		for _, b in tb:GetChildren() do
-			if b:IsA("GuiObject") and b.Visible then
-				local x = b.AbsolutePosition.X
-				if x < workspace.CurrentCamera.ViewportSize.X / 2 then
-					left = math.max(left, x + b.AbsoluteSize.X)
-				else
-					right = math.min(right, x)
-				end
-			end
-		end
-	end
-	local w = bar.AbsoluteSize.X
-	local cx = workspace.CurrentCamera.ViewportSize.X / 2
-	local clash = cx - w / 2 < left + 8 or cx + w / 2 > right - 8
-	top.Position = UDim2.new(top.Position.X.Scale, top.Position.X.Offset, 0, clash and math.ceil(62 / rootScale.Scale) or topY)
+local function refreshPyramidBottomLayout()
+	layoutPyramidProgressBottom()
 end
-task.spawn(function()
-	local tb = pg:WaitForChild("GameTopbar", 30)
-	if tb then
-		tb.DescendantAdded:Connect(function()
-			task.defer(avoidTopbar)
-		end)
-		for _, b in tb:GetChildren() do
-			if b:IsA("GuiObject") then
-				b:GetPropertyChangedSignal("Visible"):Connect(avoidTopbar)
-			end
-		end
-	end
-	avoidTopbar()
+
+rootScale:GetPropertyChangedSignal("Scale"):Connect(function()
+	task.defer(refreshPyramidBottomLayout)
 end)
-bar:GetPropertyChangedSignal("AbsoluteSize"):Connect(avoidTopbar)
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-	task.defer(avoidTopbar)
+	task.defer(refreshPyramidBottomLayout)
 end)
 
 local function cornerScale(frame)
