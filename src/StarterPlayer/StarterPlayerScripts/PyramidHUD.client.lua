@@ -58,6 +58,63 @@ local FR_EXACT = {
 	["Placement Range upgraded!"] = "Portée de placement améliorée !",
 	["MAXED"] = "MAX",
 	["Max level!"] = "Niveau max !",
+	["PLAYER"] = "JOUEUR",
+	["ECONOMY"] = "ÉCONOMIE",
+	["PROGRESS"] = "PROGRESSION",
+	["SERVER"] = "SERVEUR",
+	["SELECT"] = "SÉLECTIONNER",
+	["MODERATION"] = "MODÉRATION",
+	["KICK"] = "EXPULSER",
+	["BAN"] = "BANNIR",
+	["TELEPORT TO"] = "SE TÉLÉPORTER",
+	["BRING"] = "AMENER",
+	["UNBAN BY USERID"] = "DÉBANNIR PAR ID",
+	["UNBAN"] = "DÉBANNIR",
+	["ADD COINS"] = "AJOUTER PIÈCES",
+	["SET COINS"] = "DÉFINIR PIÈCES",
+	["PYRAMIDS STAT (RANK)"] = "STAT PYRAMIDES (CLASSEMENT)",
+	["Pyramid count"] = "Nombre de pyramides",
+	["SET PYRAMIDS"] = "DÉFINIR PYRAMIDES",
+	["BLOCKS STAT (LEADERBOARD)"] = "STAT BLOCS (CLASSEMENT)",
+	["Blocks placed"] = "Blocs placés",
+	["SET BLOCKS"] = "DÉFINIR BLOCS",
+	["RESET PLAYER"] = "RÉINITIALISER JOUEUR",
+	["RESET ALL STATS"] = "RÉINITIALISER TOUTES LES STATS",
+	["STRENGTH (BACKPACK - 1 = STRENGTH)"] = "FORCE (SAC À DOS - 1 = FORCE)",
+	["Amount"] = "Quantité",
+	["ADD STRENGTH"] = "AJOUTER FORCE",
+	["SET STRENGTH"] = "DÉFINIR FORCE",
+	["SPEED"] = "VITESSE",
+	["ADD SPEED"] = "AJOUTER VITESSE",
+	["SET SPEED"] = "DÉFINIR VITESSE",
+	["CARRIED BLOCKS"] = "BLOCS TRANSPORTÉS",
+	["SET CARRIED"] = "DÉFINIR TRANSPORT",
+	["FILL BACKPACK"] = "REMPLIR SAC",
+	["UPGRADES LEVEL (1 - 10)"] = "NIVEAU AMÉLIORATIONS (1 - 10)",
+	["Level"] = "Niveau",
+	["BULK PICKUP"] = "RAMASSAGE EN VRAC",
+	["BULK PLACE"] = "PLACEMENT GROUPÉ",
+	["PLACE RANGE"] = "PORTÉE DE PLACEMENT",
+	["MAX ALL"] = "TOUT AU MAX",
+	["RESET ALL"] = "TOUT RÉINITIALISER",
+	["GYM ZONES"] = "ZONES D'ENTRAÎNEMENT",
+	["UNLOCK ALL"] = "TOUT DÉBLOQUER",
+	["LOCK ALL"] = "TOUT VERROUILLER",
+	["PHARAOH PASS PERKS"] = "AVANTAGES PASS PHARAON",
+	["TURN OFF"] = "DÉSACTIVER",
+	["TURN ON"] = "ACTIVER",
+	["NEW PYRAMID (CLEARS THE CURRENT ONE)"] = "NOUVELLE PYRAMIDE (EFFACE L'ACTUELLE)",
+	["PYRAMID PROGRESS"] = "PROGRESSION PYRAMIDE",
+	["Percent (0 - 100) or blocks"] = "Pourcentage (0 - 100) ou blocs",
+	["FILL TO %"] = "REMPLIR À %",
+	["FINISH NOW"] = "TERMINER MAINTENANT",
+	["RESET TO 0"] = "REMETTRE À 0",
+	["PYRAMID CHAMBER (OPENS WHEN A PYRAMID IS FINISHED)"] = "CHAMBRE DU PHARAON (S'OUVRE QUAND UNE PYRAMIDE EST TERMINÉE)",
+	["ADD MINUTES"] = "AJOUTER MINUTES",
+	["CLOSE NOW"] = "FERMER MAINTENANT",
+	["LIGHTING"] = "ÉCLAIRAGE",
+	["DAY"] = "JOUR",
+	["NIGHT"] = "NUIT",
 	["ADMIN"] = "ADMINISTRATEUR",
 	["Pharaoh"] = "Pharaon",
 	["2x Pyramids · Insta-Pickup · Insta-Place"] = "2x Pyramides · Récupération Rapide · Placement rapide",
@@ -81,6 +138,16 @@ local FR_PREFIX = {
 local localizedConnections = setmetatable({}, { __mode = "k" })
 
 local function translateFrench(text)
+	local adminName = text:match("^ADMIN • (.+)$")
+	if adminName then
+		return "ADMINISTRATEUR • " .. adminName
+	end
+
+	local selectedName = text:match("^selected:%s*(.+)$")
+	if selectedName then
+		return "sélectionné : " .. selectedName
+	end
+
 	local exact = FR_EXACT[text]
 	if exact then
 		return exact
