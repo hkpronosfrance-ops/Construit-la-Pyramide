@@ -153,19 +153,19 @@ local function makeCard(def, order)
 	local timerBack = Instance.new("Frame")
 	timerBack.Name = "TimerBack"
 	timerBack.AnchorPoint = Vector2.new(0.5,0)
-	timerBack.Position = UDim2.new(0,83,0,28)
-	timerBack.Size = UDim2.fromOffset(60,17)
+	timerBack.Position = UDim2.new(0,83,0,27)
+	timerBack.Size = UDim2.fromOffset(64,19)
 	timerBack.BackgroundColor3 = rgb(10,38,17)
 	timerBack.BackgroundTransparency = 0.08
 	timerBack.BorderSizePixel = 0
 	timerBack.ZIndex = 7
 	timerBack.Parent = fill
 	local tc = Instance.new("UICorner")
-	tc.CornerRadius = UDim.new(0,4)
+	tc.CornerRadius = UDim.new(0,5)
 	tc.Parent = timerBack
 	local ts = Instance.new("UIStroke")
 	ts.Color = rgb(58,210,78)
-	ts.Thickness = 1.4
+	ts.Thickness = 1.5
 	ts.Transparency = 0.15
 	ts.Parent = timerBack
 
@@ -174,10 +174,10 @@ local function makeCard(def, order)
 	timer.Size = UDim2.fromScale(1,1)
 	timer.BackgroundTransparency = 1
 	timer.Font = Enum.Font.GothamBlack
-	timer.TextSize = 11
+	timer.TextSize = 12
 	timer.TextColor3 = Color3.new(1,1,1)
 	timer.TextStrokeColor3 = rgb(5,20,8)
-	timer.TextStrokeTransparency = 0.15
+	timer.TextStrokeTransparency = 0.1
 	timer.ZIndex = 8
 	timer.Parent = timerBack
 
