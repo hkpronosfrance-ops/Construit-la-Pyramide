@@ -62,8 +62,8 @@ local function makeDiscordHeaderIcon(header)
 	icon.Name = "DiscordHeaderIcon"
 	icon.BackgroundTransparency = 1
 	icon.AnchorPoint = Vector2.new(0, 0.5)
-	icon.Position = UDim2.new(0, -2, 0.5, 0)
-	icon.Size = UDim2.fromOffset(82, 68)
+	icon.Position = UDim2.new(0, 7, 0.5, 0)
+	icon.Size = UDim2.fromOffset(96, 78)
 	icon.Image = DISCORD_LOGO_ASSET
 	icon.ScaleType = Enum.ScaleType.Fit
 	icon.ImageColor3 = WHITE
