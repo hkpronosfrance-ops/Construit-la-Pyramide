@@ -5,6 +5,7 @@ local RS = game:GetService("ReplicatedStorage")
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local S = require(folder:WaitForChild("PyramidShape"))
+local ServerBoosts = require(script.Parent:WaitForChild("PyramidServerBoosts"))
 
 local remote = folder:FindFirstChild("Build") or Instance.new("RemoteEvent")
 remote.Name = "Build"
@@ -388,6 +389,14 @@ local carry = {}
 local finishing = false
 local expected = 0
 
+local function coinReward(blocks)
+	return math.floor(blocks * S.CoinsPerBlock * t.Mult * ServerBoosts.Get("coins") + 0.5)
+end
+
+local function pyramidReward(base)
+	return math.max(1, math.floor(base * ServerBoosts.Get("pyramids") + 0.5))
+end
+
 local function setTotal(value)
 	expected = value
 	site:SetAttribute("BlocksPlaced", value)
@@ -456,7 +465,8 @@ function finish()
 	finishing = true
 	for _, p in Players:GetPlayers() do
 		if helpers[p.UserId] then
-			local add = (p:GetAttribute("Pharaoh") and C.Pharaoh and C.Pharaoh.Pyramids) or 1
+			local baseAdd = (p:GetAttribute("Pharaoh") and C.Pharaoh and C.Pharaoh.Pyramids) or 1
+			local add = pyramidReward(baseAdd)
 			p:SetAttribute(C.Stats.Pyramids, (p:GetAttribute(C.Stats.Pyramids) or 0) + add)
 		end
 	end
@@ -550,7 +560,7 @@ local function place(p, f, list)
 	end
 	p:SetAttribute(C.Stats.Carrying, carrying - used)
 	p:SetAttribute("Blocks", (p:GetAttribute("Blocks") or 0) + used)
-	local gain = math.floor(used * S.CoinsPerBlock * t.Mult + 0.5)
+	local gain = coinReward(used)
 	p:SetAttribute(C.Stats.Coins, (p:GetAttribute(C.Stats.Coins) or 0) + gain)
 	helpers[p.UserId] = true
 	remote:FireAllClients("cells", f, changed)
@@ -623,7 +633,7 @@ local function instaPlace(p)
 			if used > 0 then
 				p:SetAttribute(C.Stats.Carrying, carrying - used)
 				p:SetAttribute("Blocks", (p:GetAttribute("Blocks") or 0) + used)
-				local gain = math.floor(used * S.CoinsPerBlock * t.Mult + 0.5)
+				local gain = coinReward(used)
 				p:SetAttribute(C.Stats.Coins, (p:GetAttribute(C.Stats.Coins) or 0) + gain)
 				helpers[p.UserId] = true
 				remote:FireAllClients("cells", f, changed)
@@ -657,7 +667,7 @@ local function robuxFill(p, amount)
 	local base = math.max(placedTotal(), filling and target or 0)
 	local fits = math.clamp(t.Total - base, 0, amount)
 	p:SetAttribute("Blocks", (p:GetAttribute("Blocks") or 0) + amount)
-	local gain = math.floor(amount * S.CoinsPerBlock * t.Mult + 0.5)
+	local gain = coinReward(amount)
 	p:SetAttribute(C.Stats.Coins, (p:GetAttribute(C.Stats.Coins) or 0) + gain)
 	helpers[p.UserId] = true
 	remote:FireClient(p, "placed", amount, gain)
