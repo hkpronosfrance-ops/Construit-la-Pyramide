@@ -8,7 +8,8 @@ local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local R = require(folder:WaitForChild("Ranks"))
 
-local holder = player:WaitForChild("PlayerGui"):WaitForChild("PyramidNameplates")
+local holder = player:WaitForChild("PlayerGui"):WaitForChild("PyramidNameplates", 30)
+if not holder then return end
 local template = holder:WaitForChild("PlateTemplate")
 template.Enabled = false
 
