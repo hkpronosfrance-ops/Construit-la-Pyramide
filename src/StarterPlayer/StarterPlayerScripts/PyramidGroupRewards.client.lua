@@ -14,7 +14,8 @@ local rgb = Color3.fromRGB
 
 local state = { joined = false, claimed = false, verifiable = G.GroupId > 0 }
 
-local gui = player:WaitForChild("PlayerGui"):WaitForChild("GroupRewards")
+local gui = player:WaitForChild("PlayerGui"):WaitForChild("GroupRewards", 30)
+if not gui then return end
 local backdrop = gui:WaitForChild("Backdrop")
 local panel = gui:WaitForChild("FreeRewards")
 panel.Visible = false
