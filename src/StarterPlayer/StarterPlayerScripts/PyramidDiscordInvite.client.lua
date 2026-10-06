@@ -3,6 +3,7 @@ local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local LocalizationService = game:GetService("LocalizationService")
 local UIS = game:GetService("UserInputService")
+local PPS = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 local pg = player:WaitForChild("PlayerGui")
@@ -252,13 +253,16 @@ local function hookDiscordText(obj)
 		prompt.MaxActivationDistance = 12
 		prompt.RequiresLineOfSight = false
 		prompt.Style = Enum.ProximityPromptStyle.Custom
+		prompt:SetAttribute("DiscordInvitePrompt", true)
 		prompt.Parent = part
+	else
+		prompt:SetAttribute("DiscordInvitePrompt", true)
 	end
 
-	prompt.Triggered:Connect(function(triggeringPlayer)
-		if triggeringPlayer == nil or triggeringPlayer == player then
-			open(true)
-		end
+	-- Local prompts do not need a player-argument check here; if this
+	-- prompt triggers on this client, it belongs to this local player.
+	prompt.Triggered:Connect(function()
+		open(true)
 	end)
 end
 
@@ -271,3 +275,11 @@ if map then
 		task.defer(hookDiscordText, obj)
 	end)
 end
+
+
+-- Extra robust path for custom ProximityPrompt UIs.
+PPS.PromptTriggered:Connect(function(prompt)
+	if prompt and prompt:GetAttribute("DiscordInvitePrompt") == true then
+		open(true)
+	end
+end)
