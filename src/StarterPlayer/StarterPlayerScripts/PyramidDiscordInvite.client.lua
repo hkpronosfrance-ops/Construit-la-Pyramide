@@ -216,6 +216,7 @@ UIS.InputBegan:Connect(function(input, processed)
 end)
 
 local hooked = setmetatable({}, { __mode = "k" })
+local discordParts = setmetatable({}, { __mode = "k" })
 
 local function partForDiscordText(textObject)
 	local node = textObject
@@ -235,36 +236,83 @@ local function isDiscordText(obj)
 	return string.upper((obj.Text or ""):gsub("%s+", "")) == "DISCORD"
 end
 
+local function signScopeFor(part)
+	local node = part
+	while node and node.Parent and node.Parent ~= workspace do
+		if node:IsA("Model") then
+			return node
+		end
+		if node.Parent and node.Parent:IsA("Model") then
+			return node.Parent
+		end
+		node = node.Parent
+	end
+	return part
+end
+
+
 local function hookDiscordText(obj)
 	if not isDiscordText(obj) then return end
 	local part = partForDiscordText(obj)
 	if not part or hooked[part] then return end
 	hooked[part] = true
+	discordParts[part] = true
+
+	-- The Discord board was created from another sign, so it can still
+	-- contain the old "Cadeau gratuit" prompt. Disable every legacy
+	-- prompt inside this sign only, otherwise Roblox may display/trigger
+	-- the wrong prompt when the player presses E.
+	local scope = signScopeFor(part)
+	for _, descendant in scope:GetDescendants() do
+		if descendant:IsA("ProximityPrompt") and descendant.Name ~= "DiscordOpenPrompt" then
+			descendant.Enabled = false
+		end
+	end
 
 	local prompt = part:FindFirstChild("DiscordOpenPrompt")
 	if not prompt then
 		prompt = Instance.new("ProximityPrompt")
 		prompt.Name = "DiscordOpenPrompt"
-		prompt.ActionText = isFrench and "Ouvrir" or "Open"
-		prompt.ObjectText = "Discord"
-		prompt.KeyboardKeyCode = Enum.KeyCode.E
-		prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
-		prompt.HoldDuration = 0
-		prompt.MaxActivationDistance = 12
-		prompt.RequiresLineOfSight = false
-		prompt.Style = Enum.ProximityPromptStyle.Custom
-		prompt:SetAttribute("DiscordInvitePrompt", true)
 		prompt.Parent = part
-	else
-		prompt:SetAttribute("DiscordInvitePrompt", true)
 	end
 
-	-- Local prompts do not need a player-argument check here; if this
-	-- prompt triggers on this client, it belongs to this local player.
+	prompt.ActionText = isFrench and "Ouvrir" or "Open"
+	prompt.ObjectText = "Discord"
+	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+	prompt.HoldDuration = 0
+	prompt.MaxActivationDistance = 12
+	prompt.RequiresLineOfSight = false
+	prompt.Style = Enum.ProximityPromptStyle.Custom
+	prompt.Enabled = true
+	prompt:SetAttribute("DiscordInvitePrompt", true)
+
 	prompt.Triggered:Connect(function()
 		open(true)
 	end)
 end
+
+local function nearDiscordSign()
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then return false end
+	for part in discordParts do
+		if part and part:IsDescendantOf(workspace) then
+			if (root.Position - part.Position).Magnitude <= 13 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+-- Hard keyboard fallback: even if another custom prompt system consumes
+-- the ProximityPrompt event, pressing E beside this board still opens it.
+UIS.InputBegan:Connect(function(input, processed)
+	if input.KeyCode == Enum.KeyCode.E and not panel.Visible and nearDiscordSign() then
+		open(true)
+	end
+end)
 
 local map = workspace:WaitForChild("PyramidMap", 60)
 if map then
