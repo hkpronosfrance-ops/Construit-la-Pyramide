@@ -1,9 +1,9 @@
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
+local OWNER_USER_ID = 10027646422
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local R = require(folder:WaitForChild("Ranks"))
@@ -91,7 +91,7 @@ local function build(p, head)
 		count.Text = pyramids >= 1000 and (math.floor(pyramids / 100) / 10 .. "K") or tostring(pyramids)
 
 		local style
-		if p:GetAttribute("IsAdmin") == true or (RunService:IsStudio() and p == player) then
+		if p.UserId == OWNER_USER_ID then
 			rank.Text = "👑 ADMIN"
 			style = R.AdminStyle
 			setAdminFx(true)
@@ -110,7 +110,6 @@ local function build(p, head)
 	paint()
 	local connections = {
 		p:GetAttributeChangedSignal(C.Stats.Pyramids):Connect(paint),
-		p:GetAttributeChangedSignal("IsAdmin"):Connect(paint),
 	}
 	return { gui = bb, connections = connections, stopFx = function() setAdminFx(false) end }
 end
