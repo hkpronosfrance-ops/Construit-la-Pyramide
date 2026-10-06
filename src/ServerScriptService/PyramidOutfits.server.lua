@@ -119,22 +119,24 @@ local function dress(p)
 	end
 	if ch.Parent then
 		for _, c in ch:GetChildren() do
-			if c:IsA("Shirt") or c:IsA("Pants") or c:IsA("ShirtGraphic") or c.Name == "PharaohStaff" then
+			if c:IsA("Shirt") or c:IsA("Pants") or c:IsA("ShirtGraphic") or c.Name == "PharaohStaff" or c.Name == "AdminStaff" then
 				c:Destroy()
 			end
 		end
 		if pharaoh or isOwner then
 			local shirt = Instance.new("Shirt")
-			shirt.Name = "PharaohShirt"
+			shirt.Name = isOwner and "AdminShirt" or "PharaohShirt"
 			shirt.ShirtTemplate = PHARAOH.Shirt
 			shirt.Parent = ch
 			local pants = Instance.new("Pants")
-			pants.Name = "PharaohPants"
+			pants.Name = isOwner and "AdminPants" or "PharaohPants"
 			pants.PantsTemplate = PHARAOH.Pants
 			pants.Parent = ch
 			local staff = RS:FindFirstChild("PyramidHUD") and RS.PyramidHUD:FindFirstChild("PharaohStaff")
 			if staff then
-				hum:AddAccessory(staff:Clone())
+				local clone = staff:Clone()
+				clone.Name = isOwner and "AdminStaff" or "PharaohStaff"
+				hum:AddAccessory(clone)
 			end
 		else
 			local kilt = Instance.new("Pants")
