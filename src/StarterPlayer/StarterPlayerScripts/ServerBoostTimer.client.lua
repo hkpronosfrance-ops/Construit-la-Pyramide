@@ -69,8 +69,8 @@ gui.Parent = pg
 local holder = Instance.new("Frame")
 holder.Name = "Holder"
 holder.AnchorPoint = Vector2.new(1,1)
-holder.Position = UDim2.new(1,-14,1,-145)
-holder.Size = UDim2.fromOffset(238,102)
+holder.Position = UDim2.new(1,-18,1,-150)
+holder.Size = UDim2.fromOffset(258,112)
 holder.BackgroundTransparency = 1
 holder.Visible = false
 holder.Parent = gui
@@ -87,8 +87,8 @@ resize()
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize)
 
 local grid = Instance.new("UIGridLayout")
-grid.CellSize = UDim2.fromOffset(116,48)
-grid.CellPadding = UDim2.fromOffset(6,6)
+grid.CellSize = UDim2.fromOffset(126,52)
+grid.CellPadding = UDim2.fromOffset(6,7)
 grid.FillDirectionMaxCells = 2
 grid.HorizontalAlignment = Enum.HorizontalAlignment.Right
 grid.VerticalAlignment = Enum.VerticalAlignment.Bottom
@@ -101,10 +101,24 @@ local function makeCard(def, order)
 	local card = Instance.new("Frame")
 	card.Name = def.key
 	card.LayoutOrder = order
-	card.Size = UDim2.fromOffset(116,48)
+	card.Size = UDim2.fromOffset(126,52)
 	card.BackgroundTransparency = 1
 	card.Visible = false
 	card.Parent = holder
+
+	local shadow = Instance.new("Frame")
+	shadow.Name = "Shadow"
+	shadow.AnchorPoint = Vector2.new(0.5,0.5)
+	shadow.Position = UDim2.new(0.5,2,0.5,3)
+	shadow.Size = UDim2.new(1,-2,1,-2)
+	shadow.BackgroundColor3 = rgb(8,8,12)
+	shadow.BackgroundTransparency = 0.28
+	shadow.BorderSizePixel = 0
+	shadow.ZIndex = -2
+	shadow.Parent = card
+	local shadowCorner = Instance.new("UICorner")
+	shadowCorner.CornerRadius = UDim.new(0,14)
+	shadowCorner.Parent = shadow
 
 	local _,_,fill = Tile.paint(card, def.rim, def.top, def.bottom)
 
@@ -114,16 +128,16 @@ local function makeCard(def, order)
 	icon.Image = def.icon
 	icon.ScaleType = Enum.ScaleType.Fit
 	icon.AnchorPoint = Vector2.new(0.5,0.5)
-	icon.Position = UDim2.new(0,24,0.5,0)
-	icon.Size = UDim2.fromOffset(36,36)
+	icon.Position = UDim2.new(0,27,0.5,0)
+	icon.Size = UDim2.fromOffset(40,40)
 	icon.ZIndex = 6
 	icon.Parent = fill
 
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.fromOffset(44,5)
-	title.Size = UDim2.fromOffset(65,20)
+	title.Position = UDim2.fromOffset(49,5)
+	title.Size = UDim2.fromOffset(71,22)
 	title.Font = Enum.Font.FredokaOne
 	title.TextScaled = true
 	title.TextColor3 = Color3.new(1,1,1)
@@ -133,16 +147,16 @@ local function makeCard(def, order)
 	title.ZIndex = 7
 	title.Parent = fill
 	local limit = Instance.new("UITextSizeConstraint")
-	limit.MaxTextSize = 16
+	limit.MaxTextSize = 17
 	limit.MinTextSize = 8
 	limit.Parent = title
 
 	local timerBack = Instance.new("Frame")
 	timerBack.Name = "TimerBack"
 	timerBack.AnchorPoint = Vector2.new(0.5,0)
-	timerBack.Position = UDim2.new(0,77,0,27)
-	timerBack.Size = UDim2.fromOffset(58,15)
-	timerBack.BackgroundColor3 = rgb(15,56,24)
+	timerBack.Position = UDim2.new(0,86,0,29)
+	timerBack.Size = UDim2.fromOffset(64,16)
+	timerBack.BackgroundColor3 = rgb(13,47,20)
 	timerBack.BackgroundTransparency = 0.08
 	timerBack.BorderSizePixel = 0
 	timerBack.ZIndex = 7
@@ -152,7 +166,7 @@ local function makeCard(def, order)
 	tc.Parent = timerBack
 	local ts = Instance.new("UIStroke")
 	ts.Color = rgb(58,210,78)
-	ts.Thickness = 1
+	ts.Thickness = 1.2
 	ts.Transparency = 0.15
 	ts.Parent = timerBack
 
@@ -161,12 +175,25 @@ local function makeCard(def, order)
 	timer.Size = UDim2.fromScale(1,1)
 	timer.BackgroundTransparency = 1
 	timer.Font = Enum.Font.GothamBlack
-	timer.TextSize = 8
+	timer.TextSize = 9
 	timer.TextColor3 = rgb(110,255,125)
 	timer.TextStrokeColor3 = rgb(5,25,8)
 	timer.TextStrokeTransparency = 0.25
 	timer.ZIndex = 8
 	timer.Parent = timerBack
+
+	local accent = Instance.new("Frame")
+	accent.Name = "Accent"
+	accent.AnchorPoint = Vector2.new(0,0.5)
+	accent.Position = UDim2.new(0,4,0.5,0)
+	accent.Size = UDim2.fromOffset(3,34)
+	accent.BackgroundColor3 = def.top
+	accent.BorderSizePixel = 0
+	accent.ZIndex = 8
+	accent.Parent = fill
+	local accentCorner = Instance.new("UICorner")
+	accentCorner.CornerRadius = UDim.new(1,0)
+	accentCorner.Parent = accent
 
 	cards[def.key] = { frame = card, title = title, timer = timer, def = def }
 end
