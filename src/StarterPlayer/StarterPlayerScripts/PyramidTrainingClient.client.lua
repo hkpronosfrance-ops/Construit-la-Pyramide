@@ -46,41 +46,41 @@ local function styleAdminLabel(o)
 	end
 
 	o.Font = Enum.Font.GothamBlack
-	o.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
-	o.BackgroundTransparency = 0.08
+	o.BackgroundTransparency = 1
+	o.BorderSizePixel = 0
+	o.TextColor3 = Color3.fromRGB(255, 255, 255)
 	o.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	o.TextStrokeTransparency = 0
 
-	if isMultiplier then
-		o.TextColor3 = Color3.fromRGB(255, 210, 55)
-	else
-		o.TextColor3 = Color3.fromRGB(255, 255, 255)
+	local oldCorner = o:FindFirstChild("AdminZoneCorner")
+	if oldCorner then
+		oldCorner:Destroy()
+	end
+	local oldStroke = o:FindFirstChild("AdminZoneStroke")
+	if oldStroke then
+		oldStroke:Destroy()
 	end
 
-	local gradient = o:FindFirstChildOfClass("UIGradient")
-	if gradient then
-		gradient.Enabled = false
+	local gradient = o:FindFirstChild("AdminZoneGradient")
+	if not gradient then
+		gradient = Instance.new("UIGradient")
+		gradient.Name = "AdminZoneGradient"
+		gradient.Parent = o
 	end
+	gradient.Enabled = true
+	gradient.Rotation = 90
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(0.32, Color3.fromRGB(215, 215, 215)),
+		ColorSequenceKeypoint.new(0.68, Color3.fromRGB(85, 85, 85)),
+		ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 0, 0)),
+	})
 
-	local corner = o:FindFirstChild("AdminZoneCorner")
-	if not corner then
-		corner = Instance.new("UICorner")
-		corner.Name = "AdminZoneCorner"
-		corner.Parent = o
+	for _, other in o:GetChildren() do
+		if other:IsA("UIGradient") and other ~= gradient then
+			other.Enabled = false
+		end
 	end
-	corner.CornerRadius = UDim.new(0, isMultiplier and 10 or 8)
-
-	local stroke = o:FindFirstChild("AdminZoneStroke")
-	if not stroke then
-		stroke = Instance.new("UIStroke")
-		stroke.Name = "AdminZoneStroke"
-		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-		stroke.LineJoinMode = Enum.LineJoinMode.Round
-		stroke.Parent = o
-	end
-	stroke.Color = Color3.fromRGB(255, 190, 35)
-	stroke.Transparency = 0
-	stroke.Thickness = isMultiplier and 3 or 2
 end
 
 local function styleAdminZone()
