@@ -28,7 +28,7 @@ local DISCORD_BLURPLE_DARK = rgb(68, 78, 199)
 local DISCORD_SURFACE = rgb(49, 51, 56)
 local DISCORD_SURFACE_DARK = rgb(30, 31, 34)
 local DISCORD_CARD = rgb(64, 68, 75)
-local DISCORD_LOGO_ASSET = "rbxassetid://75755133922844"
+local DISCORD_LOGO_ASSET = "rbxassetid://105894278804230"
 
 local function gradientPair(obj, topColor, bottomColor, rotation)
 	local g = obj:FindFirstChildOfClass("UIGradient") or Instance.new("UIGradient")
