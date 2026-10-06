@@ -46,23 +46,36 @@ local function build(p, head)
 	local function paint()
 		local pyramids = math.floor(tonumber(p:GetAttribute(C.Stats.Pyramids)) or 0)
 		count.Text = pyramids >= 1000 and (math.floor(pyramids / 100) / 10 .. "K") or tostring(pyramids)
-		local index = R.index(pyramids)
-		local style = R.style(index)
-		rank.Text = R.Ranks[index][1]
+
+		local style
+		if p:GetAttribute("IsAdmin") == true then
+			rank.Text = "ADMIN"
+			style = R.AdminStyle
+		else
+			local index = R.index(pyramids)
+			rank.Text = R.Ranks[index][1]
+			style = R.style(index)
+		end
+
 		gradient.Color = R.sequence(style)
 		gradient.Rotation = style.Horizontal and 0 or 90
 		rankInk.Color = style.Ink
 		hug(rank)
 	end
 	paint()
-	local conn = p:GetAttributeChangedSignal(C.Stats.Pyramids):Connect(paint)
-	return { gui = bb, conn = conn }
+	local connections = {
+		p:GetAttributeChangedSignal(C.Stats.Pyramids):Connect(paint),
+		p:GetAttributeChangedSignal("IsAdmin"):Connect(paint),
+	}
+	return { gui = bb, connections = connections }
 end
 
 local function drop(p)
 	local plate = plates[p]
 	if plate then
-		plate.conn:Disconnect()
+		for _, connection in plate.connections or {} do
+			connection:Disconnect()
+		end
 		plate.gui:Destroy()
 		plates[p] = nil
 	end
