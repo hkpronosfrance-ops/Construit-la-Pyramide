@@ -65,7 +65,8 @@ local function build(p, head)
 
 		if on then
 			rank.TextColor3 = Color3.new(1, 1, 1)
-			rankInk.Thickness = math.max(normalStrokeThickness, 2.8)
+			rankInk.Color = Color3.fromRGB(255, 235, 200)
+			rankInk.Thickness = math.max(normalStrokeThickness, 3.2)
 			rankInk.Transparency = 0
 			pulseTween = TweenService:Create(
 				rankScale,
@@ -74,8 +75,8 @@ local function build(p, head)
 			)
 			shineTween = TweenService:Create(
 				gradient,
-				TweenInfo.new(1.55, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true),
-				{ Offset = Vector2.new(0.38, 0) }
+				TweenInfo.new(2.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+				{ Offset = Vector2.new(0.16, 0) }
 			)
 			pulseTween:Play()
 			shineTween:Play()
