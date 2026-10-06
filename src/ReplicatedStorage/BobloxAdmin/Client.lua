@@ -94,57 +94,127 @@ local function renderPlayers()
  end
  playerList.CanvasSize=UDim2.fromOffset(0,y+10)
 end
-local annRow,annAvatar,annText,annEdge,annRing,annScale
+local annRow,annAvatar,annText,annEdge,annRing,annScale,annCardStroke,annDefaultPosition
 local annCounter=0
 local function annEscape(s) return (tostring(s):gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;")) end
 local function annFade(alpha)
- annText.TextTransparency=alpha if annEdge then annEdge.Transparency=alpha end annAvatar.ImageTransparency=alpha annAvatar.BackgroundTransparency=alpha if annRing then annRing.Transparency=alpha end
+ annText.TextTransparency=alpha
+ if annEdge then annEdge.Transparency=alpha end
+ annAvatar.ImageTransparency=alpha
+ annAvatar.BackgroundTransparency=math.clamp(alpha+.08,0,1)
+ if annRing then annRing.Transparency=alpha end
+ annRow.BackgroundTransparency=math.clamp(.08+alpha*.92,0,1)
+ if annCardStroke then annCardStroke.Transparency=math.clamp(.08+alpha*.92,0,1) end
 end
 local function wireAnnouncement(pg)
  local annGui=pg:WaitForChild("AnnouncementLine",30)
  if not annGui then return end
- annRow=annGui:WaitForChild("Announcement") annRow.Visible=false
+ annRow=annGui:WaitForChild("Announcement")
+ annRow.Visible=false
+ annDefaultPosition=annRow.Position
+ annRow.BackgroundColor3=rgb(13,15,20)
+ annRow.BackgroundTransparency=.08
+ annRow.BorderSizePixel=0
+
+ local corner=annRow:FindFirstChild("AdminAnnouncementCorner") or Instance.new("UICorner")
+ corner.Name="AdminAnnouncementCorner"
+ corner.CornerRadius=UDim.new(0,12)
+ corner.Parent=annRow
+
+ annCardStroke=annRow:FindFirstChild("AdminAnnouncementStroke") or Instance.new("UIStroke")
+ annCardStroke.Name="AdminAnnouncementStroke"
+ annCardStroke.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+ annCardStroke.LineJoinMode=Enum.LineJoinMode.Round
+ annCardStroke.Color=rgb(255,184,34)
+ annCardStroke.Thickness=2
+ annCardStroke.Transparency=.08
+ annCardStroke.Parent=annRow
+
+ local grad=annRow:FindFirstChild("AdminAnnouncementGradient") or Instance.new("UIGradient")
+ grad.Name="AdminAnnouncementGradient"
+ grad.Rotation=0
+ grad.Color=ColorSequence.new({
+  ColorSequenceKeypoint.new(0,rgb(16,18,24)),
+  ColorSequenceKeypoint.new(.55,rgb(34,26,14)),
+  ColorSequenceKeypoint.new(1,rgb(16,18,24)),
+ })
+ grad.Parent=annRow
+
  annScale=annRow:FindFirstChildOfClass("UIScale") or Instance.new("UIScale",annRow)
- annAvatar=annRow:WaitForChild("Avatar") annRing=annAvatar:FindFirstChildOfClass("UIStroke")
- annText=annRow:WaitForChild("Text") annEdge=annText:FindFirstChildOfClass("UIStroke")
+ annAvatar=annRow:WaitForChild("Avatar")
+ annAvatar.BackgroundColor3=rgb(255,184,34)
+ annRing=annAvatar:FindFirstChildOfClass("UIStroke")
+ if annRing then
+  annRing.Color=rgb(255,218,92)
+  annRing.Thickness=2
+ end
+ annText=annRow:WaitForChild("Text")
+ annText.RichText=true
+ annText.TextWrapped=true
+ annText.TextXAlignment=Enum.TextXAlignment.Left
+ annText.TextYAlignment=Enum.TextYAlignment.Center
+ annText.TextColor3=Color3.new(1,1,1)
+ annEdge=annText:FindFirstChildOfClass("UIStroke")
+ if annEdge then
+  annEdge.Color=Color3.new(0,0,0)
+  annEdge.Thickness=1.5
+  annEdge.Transparency=.15
+ end
 end
 local function showAnnouncement(data)
  local body=type(data)=="table" and tostring(data.text or "") or tostring(data or "")
  if body=="" or not annRow then return end
  local nick=tostring((type(data)=="table" and data.fromName) or "ADMIN")
- local nickColor=attrOr(annRow,"NickColor",Color3.fromHex("56B2FF"))
- annText.Text=('<font color="#%s">%s</font>: %s'):format(nickColor:ToHex(),annEscape(nick),annEscape(body))
- local bounds=TextService:GetTextSize(nick..": "..body,annText.TextSize,annText.Font,Vector2.new(980,4000))
- local w,h=math.ceil(bounds.X)+10,math.ceil(bounds.Y)+6
- annText.Size=UDim2.fromOffset(w,h)
- local rowW=annText.Position.X.Offset+w
- annRow.Size=UDim2.fromOffset(rowW,math.max(h,annAvatar.Size.Y.Offset))
+ local nickColor=attrOr(annRow,"NickColor",rgb(255,205,72))
+ local titleText="SERVER ANNOUNCEMENT"
+ annText.Text=('<font color="#FFD45C"><b>📢 %s</b></font>\n<font color="#%s"><b>%s</b></font>: %s'):format(titleText,nickColor:ToHex(),annEscape(nick),annEscape(body))
+
+ local plain=titleText.."\n"..nick..": "..body
+ local bounds=TextService:GetTextSize(plain,annText.TextSize,annText.Font,Vector2.new(760,4000))
+ local w=math.clamp(math.ceil(bounds.X)+26,440,820)
+ local h=math.max(math.ceil(bounds.Y)+14,annAvatar.Size.Y.Offset+12)
+ annText.Size=UDim2.new(1,-annText.Position.X.Offset-14,1,-10)
+ annRow.Size=UDim2.fromOffset(w,h)
+
  local fit=1
  local cam=workspace.CurrentCamera
- if cam and cam.ViewportSize.X>0 then fit=math.min(1,cam.ViewportSize.X*.92/rowW) end
+ if cam and cam.ViewportSize.X>0 then fit=math.min(1,cam.ViewportSize.X*.90/w) end
  local userId=type(data)=="table" and tonumber(data.fromUserId) or nil
  annAvatar.Image=""
  if userId and userId>0 then
   task.spawn(function()
    local ok,url=pcall(function() return Players:GetUserThumbnailAsync(userId,Enum.ThumbnailType.HeadShot,Enum.ThumbnailSize.Size150x150) end)
-   if ok then annAvatar.Image=url end
+   if ok and annAvatar then annAvatar.Image=url end
   end)
  end
- annFade(0)
- annRow.Visible=true
- annScale.Scale=fit*.8
- TweenService:Create(annScale,TweenInfo.new(.25,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=fit}):Play()
+
  annCounter+=1
  local mine=annCounter
+ annFade(0)
+ annRow.Visible=true
+ annScale.Scale=fit*.82
+ if annDefaultPosition then
+  annRow.Position=annDefaultPosition-UDim2.fromOffset(0,26)
+ end
+ TweenService:Create(annScale,TweenInfo.new(.30,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=fit}):Play()
+ if annDefaultPosition then
+  TweenService:Create(annRow,TweenInfo.new(.30,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{Position=annDefaultPosition}):Play()
+ end
+
  task.delay(7,function()
   if annCounter~=mine then return end
+  local target=annDefaultPosition and (annDefaultPosition-UDim2.fromOffset(0,18)) or annRow.Position
+  TweenService:Create(annRow,TweenInfo.new(.35,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Position=target,BackgroundTransparency=1}):Play()
   local started=os.clock()
-  while os.clock()-started<.45 do
+  while os.clock()-started<.35 do
    if annCounter~=mine then return end
-   annFade((os.clock()-started)/.45)
+   annFade((os.clock()-started)/.35)
    Run.Heartbeat:Wait()
   end
-  if annCounter==mine then annRow.Visible=false end
+  if annCounter==mine then
+   annRow.Visible=false
+   if annDefaultPosition then annRow.Position=annDefaultPosition end
+  end
  end)
 end
 function M.toggle(value)
@@ -212,61 +282,88 @@ function M.start()
  if pageServer then
   local announce=Instance.new("Frame")
   announce.Name="ServerAnnouncement"
-  announce.Size=UDim2.new(1,-8,0,48)
+  announce.Size=UDim2.new(1,-8,0,84)
   announce.Position=UDim2.fromOffset(4,4)
-  announce.BackgroundColor3=rgb(36,40,52)
+  announce.BackgroundColor3=rgb(25,28,38)
   announce.BorderSizePixel=0
   announce.ZIndex=20
   announce.Parent=pageServer
 
   local corner=Instance.new("UICorner")
-  corner.CornerRadius=UDim.new(0,6)
+  corner.CornerRadius=UDim.new(0,8)
   corner.Parent=announce
 
   local edge=Instance.new("UIStroke")
   edge.Color=rgb(255,184,34)
   edge.Thickness=2
-  edge.Transparency=.15
+  edge.Transparency=.10
   edge.Parent=announce
+
+  local bg=Instance.new("UIGradient")
+  bg.Rotation=0
+  bg.Color=ColorSequence.new({
+   ColorSequenceKeypoint.new(0,rgb(31,34,46)),
+   ColorSequenceKeypoint.new(.55,rgb(45,34,18)),
+   ColorSequenceKeypoint.new(1,rgb(26,29,39)),
+  })
+  bg.Parent=announce
 
   local label=Instance.new("TextLabel")
   label.Name="Title"
   label.BackgroundTransparency=1
-  label.Position=UDim2.fromOffset(8,2)
-  label.Size=UDim2.new(1,-16,0,14)
+  label.Position=UDim2.fromOffset(10,5)
+  label.Size=UDim2.new(1,-20,0,16)
   label.Font=Enum.Font.GothamBold
   label.TextSize=11
   label.TextXAlignment=Enum.TextXAlignment.Left
   label.TextColor3=YELLOW
-  label.Text="SERVER ANNOUNCEMENT"
+  label.Text="📢 SERVER ANNOUNCEMENT"
   label.ZIndex=21
   label.Parent=announce
 
+  local description=Instance.new("TextLabel")
+  description.Name="Description"
+  description.BackgroundTransparency=1
+  description.Position=UDim2.fromOffset(10,20)
+  description.Size=UDim2.new(1,-20,0,13)
+  description.Font=Enum.Font.Gotham
+  description.TextSize=9
+  description.TextXAlignment=Enum.TextXAlignment.Left
+  description.TextColor3=rgb(205,208,218)
+  description.Text="Broadcast a filtered message to everyone in this server."
+  description.ZIndex=21
+  description.Parent=announce
+
   local box=Instance.new("TextBox")
   box.Name="Message"
-  box.Position=UDim2.fromOffset(8,19)
-  box.Size=UDim2.new(1,-92,0,23)
-  box.BackgroundColor3=rgb(20,23,32)
+  box.Position=UDim2.fromOffset(10,38)
+  box.Size=UDim2.new(1,-104,0,27)
+  box.BackgroundColor3=rgb(14,16,23)
   box.BorderSizePixel=0
   box.ClearTextOnFocus=false
   box.PlaceholderText="Message..."
   box.Text=""
   box.TextColor3=Color3.new(1,1,1)
-  box.PlaceholderColor3=rgb(145,150,165)
+  box.PlaceholderColor3=rgb(130,136,153)
   box.Font=Enum.Font.Gotham
   box.TextSize=11
   box.TextXAlignment=Enum.TextXAlignment.Left
   box.ZIndex=21
   box.Parent=announce
   local boxCorner=Instance.new("UICorner")
-  boxCorner.CornerRadius=UDim.new(0,4)
+  boxCorner.CornerRadius=UDim.new(0,5)
   boxCorner.Parent=box
+  local boxStroke=Instance.new("UIStroke")
+  boxStroke.Color=rgb(88,94,112)
+  boxStroke.Transparency=.35
+  boxStroke.Thickness=1
+  boxStroke.Parent=box
 
   local sendButton=Instance.new("TextButton")
   sendButton.Name="Send"
   sendButton.AnchorPoint=Vector2.new(1,0)
-  sendButton.Position=UDim2.new(1,-8,0,19)
-  sendButton.Size=UDim2.fromOffset(76,23)
+  sendButton.Position=UDim2.new(1,-10,0,38)
+  sendButton.Size=UDim2.fromOffset(84,27)
   sendButton.BackgroundColor3=rgb(255,138,0)
   sendButton.BorderSizePixel=0
   sendButton.Text="SEND"
@@ -276,32 +373,86 @@ function M.start()
   sendButton.ZIndex=21
   sendButton.Parent=announce
   local sendCorner=Instance.new("UICorner")
-  sendCorner.CornerRadius=UDim.new(0,4)
+  sendCorner.CornerRadius=UDim.new(0,5)
   sendCorner.Parent=sendButton
   T.gradient(sendButton,rgb(255,138,0))
 
+  local counter=Instance.new("TextLabel")
+  counter.Name="Counter"
+  counter.BackgroundTransparency=1
+  counter.Position=UDim2.fromOffset(10,67)
+  counter.Size=UDim2.fromOffset(70,12)
+  counter.Font=Enum.Font.Gotham
+  counter.TextSize=8
+  counter.TextXAlignment=Enum.TextXAlignment.Left
+  counter.TextColor3=rgb(145,150,165)
+  counter.Text="0 / 180"
+  counter.ZIndex=21
+  counter.Parent=announce
+
+  local status=Instance.new("TextLabel")
+  status.Name="Status"
+  status.BackgroundTransparency=1
+  status.AnchorPoint=Vector2.new(1,0)
+  status.Position=UDim2.new(1,-10,0,67)
+  status.Size=UDim2.fromOffset(180,12)
+  status.Font=Enum.Font.GothamBold
+  status.TextSize=8
+  status.TextXAlignment=Enum.TextXAlignment.Right
+  status.TextColor3=rgb(130,255,145)
+  status.Text=""
+  status.ZIndex=21
+  status.Parent=announce
+
+  box:GetPropertyChangedSignal("Text"):Connect(function()
+   if #box.Text>180 then box.Text=box.Text:sub(1,180) end
+   counter.Text=tostring(#box.Text).." / 180"
+   counter.TextColor3=#box.Text>=165 and rgb(255,175,80) or rgb(145,150,165)
+  end)
+
+  local normal=sendButton.BackgroundColor3
+  sendButton.MouseEnter:Connect(function()
+   TweenService:Create(sendButton,TweenInfo.new(.12),{BackgroundColor3=rgb(255,167,48)}):Play()
+  end)
+  sendButton.MouseLeave:Connect(function()
+   TweenService:Create(sendButton,TweenInfo.new(.12),{BackgroundColor3=normal}):Play()
+  end)
+
   for _,child in pageServer:GetChildren() do
    if child~=announce and child:IsA("GuiObject") then
-    child.Position=child.Position+UDim2.fromOffset(0,54)
+    child.Position=child.Position+UDim2.fromOffset(0,90)
    end
   end
   if pageServer:IsA("ScrollingFrame") then
-   pageServer.CanvasSize=pageServer.CanvasSize+UDim2.fromOffset(0,54)
+   pageServer.CanvasSize=pageServer.CanvasSize+UDim2.fromOffset(0,90)
   end
 
+  local statusToken=0
+  local function setStatus(textValue,color)
+   statusToken+=1
+   local mine=statusToken
+   status.Text=textValue
+   status.TextColor3=color
+   task.delay(2.5,function()
+    if statusToken==mine and status then status.Text="" end
+   end)
+  end
   local function submitAnnouncement()
    local message=(box.Text or ""):match("^%s*(.-)%s*$")
-   if message=="" then log("Enter a server message first.",WARN) return end
-   if #message>180 then log("Server message must be 180 characters or fewer.",WARN) return end
+   if message=="" then
+    setStatus("MESSAGE REQUIRED",WARN)
+    log("Enter a server message first.",WARN)
+    return
+   end
    send(PREFIX.." announce "..message)
    box.Text=""
+   setStatus("SENT ✓",rgb(130,255,145))
   end
   sendButton.Activated:Connect(submitAnnouncement)
   box.FocusLost:Connect(function(enterPressed)
    if enterPressed then submitAnnouncement() end
   end)
  end
-
  local pagePlayer=pages.PLAYER
  selectedLabel=pagePlayer:WaitForChild("SelectedLabel")
  selectedLabel.Text=attrOr(selectedLabel,"EmptyText","nobody selected")
