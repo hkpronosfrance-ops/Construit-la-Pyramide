@@ -9,6 +9,12 @@ local LocalizationService = game:GetService("LocalizationService")
 
 local player = Players.LocalPlayer
 
+task.defer(function()
+	pcall(function()
+		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+	end)
+end)
+
 local isFrench = RunService:IsStudio()
 if not isFrench then
 	local ok, locale = pcall(function()
