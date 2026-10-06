@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
-local InsertService = game:GetService("InsertService")
+local AssetService = game:GetService("AssetService")
 
 local OWNER_USER_ID = 10027646422
 local ADMIN_AURA_ASSET_ID = 10584464506
@@ -89,10 +89,10 @@ local function getAdminAuraTemplate()
 	adminAuraLoadAttempted = true
 
 	local ok, loaded = pcall(function()
-		return InsertService:LoadAsset(ADMIN_AURA_ASSET_ID)
+		return AssetService:LoadAssetAsync(ADMIN_AURA_ASSET_ID)
 	end)
 	if not ok or not loaded then
-		warn("[PyramidOutfits] could not load admin aura asset " .. tostring(ADMIN_AURA_ASSET_ID))
+		warn("[PyramidOutfits] could not load admin aura asset " .. tostring(ADMIN_AURA_ASSET_ID) .. ": " .. tostring(loaded))
 		return nil
 	end
 
