@@ -27,7 +27,8 @@ local function pads()
 	return gym and gym:FindFirstChild("Pads")
 end
 
-local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidTraining")
+local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidTraining", 30)
+if not gui then return end
 local msg = gui:WaitForChild("Message")
 msg.Visible = false
 local popupTemplate = gui:WaitForChild("GainPopupTemplate")
