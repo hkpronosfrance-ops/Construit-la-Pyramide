@@ -3,11 +3,17 @@ local UIS=game:GetService("UserInputService")
 local Run=game:GetService("RunService")
 local TextService=game:GetService("TextService")
 local TweenService=game:GetService("TweenService")
+local LocalizationService=game:GetService("LocalizationService")
 local folder=script.Parent
 local C=require(folder.Config)
 local remote=folder.Remote
 local T=require(C.Theme)
 local p=Players.LocalPlayer
+local isFrench=Run:IsStudio()
+if not isFrench then
+ local ok,locale=pcall(function() return LocalizationService.RobloxLocaleId end)
+ isFrench=ok and type(locale)=="string" and locale:lower():sub(1,2)=="fr"
+end
 local M={Authorized=false}
 local rgb=Color3.fromRGB
 local YELLOW=rgb(255,205,0)
@@ -111,7 +117,9 @@ local function wireAnnouncement(pg)
  if not annGui then return end
  annRow=annGui:WaitForChild("Announcement")
  annRow.Visible=false
- annDefaultPosition=annRow.Position
+ annRow.AnchorPoint=Vector2.new(.5,0)
+ annDefaultPosition=UDim2.new(.5,0,0,64)
+ annRow.Position=annDefaultPosition
  annRow.BackgroundColor3=rgb(13,15,20)
  annRow.BackgroundTransparency=.08
  annRow.BorderSizePixel=0
@@ -166,18 +174,21 @@ local function showAnnouncement(data)
  if body=="" or not annRow then return end
  local nick=tostring((type(data)=="table" and data.fromName) or "ADMIN")
  local nickColor=attrOr(annRow,"NickColor",rgb(255,205,72))
- local titleText="SERVER ANNOUNCEMENT"
+ local titleText=isFrench and "MESSAGE SERVEUR" or "SERVER ANNOUNCEMENT"
  annText.Text=('<font color="#FFD45C"><b>📢 %s</b></font>\n<font color="#%s"><b>%s</b></font>: %s'):format(titleText,nickColor:ToHex(),annEscape(nick),annEscape(body))
 
+ local cam=workspace.CurrentCamera
+ local viewportW=cam and cam.ViewportSize.X or 1280
+ local maxW=math.clamp(math.floor(viewportW*.62),440,760)
+ local textW=math.max(220,maxW-annText.Position.X.Offset-22)
  local plain=titleText.."\n"..nick..": "..body
- local bounds=TextService:GetTextSize(plain,annText.TextSize,annText.Font,Vector2.new(760,4000))
- local w=math.clamp(math.ceil(bounds.X)+26,440,820)
- local h=math.max(math.ceil(bounds.Y)+14,annAvatar.Size.Y.Offset+12)
+ local bounds=TextService:GetTextSize(plain,annText.TextSize,annText.Font,Vector2.new(textW,180))
+ local w=math.clamp(math.ceil(bounds.X)+annText.Position.X.Offset+22,440,maxW)
+ local h=math.clamp(math.max(math.ceil(bounds.Y)+16,annAvatar.Size.Y.Offset+12),58,104)
  annText.Size=UDim2.new(1,-annText.Position.X.Offset-14,1,-10)
  annRow.Size=UDim2.fromOffset(w,h)
 
  local fit=1
- local cam=workspace.CurrentCamera
  if cam and cam.ViewportSize.X>0 then fit=math.min(1,cam.ViewportSize.X*.90/w) end
  local userId=type(data)=="table" and tonumber(data.fromUserId) or nil
  annAvatar.Image=""
@@ -317,7 +328,7 @@ function M.start()
   label.TextSize=11
   label.TextXAlignment=Enum.TextXAlignment.Left
   label.TextColor3=YELLOW
-  label.Text="📢 SERVER ANNOUNCEMENT"
+  label.Text=isFrench and "📢 MESSAGE SERVEUR" or "📢 SERVER ANNOUNCEMENT"
   label.ZIndex=21
   label.Parent=announce
 
@@ -330,7 +341,7 @@ function M.start()
   description.TextSize=9
   description.TextXAlignment=Enum.TextXAlignment.Left
   description.TextColor3=rgb(205,208,218)
-  description.Text="Broadcast a filtered message to everyone in this server."
+  description.Text=isFrench and "Envoie un message filtré à tous les joueurs de ce serveur." or "Broadcast a filtered message to everyone in this server."
   description.ZIndex=21
   description.Parent=announce
 
@@ -366,16 +377,24 @@ function M.start()
   sendButton.Size=UDim2.fromOffset(84,27)
   sendButton.BackgroundColor3=rgb(255,138,0)
   sendButton.BorderSizePixel=0
-  sendButton.Text="SEND"
+  sendButton.AutoButtonColor=false
+  sendButton.Text=isFrench and "ENVOYER" or "SEND"
   sendButton.TextColor3=Color3.new(1,1,1)
+  sendButton.TextStrokeColor3=rgb(110,48,0)
+  sendButton.TextStrokeTransparency=.35
+  sendButton.TextTransparency=0
   sendButton.Font=Enum.Font.GothamBold
   sendButton.TextSize=11
-  sendButton.ZIndex=21
+  sendButton.ZIndex=23
   sendButton.Parent=announce
   local sendCorner=Instance.new("UICorner")
   sendCorner.CornerRadius=UDim.new(0,5)
   sendCorner.Parent=sendButton
-  T.gradient(sendButton,rgb(255,138,0))
+  local sendStroke=Instance.new("UIStroke")
+  sendStroke.Color=rgb(255,210,92)
+  sendStroke.Thickness=1
+  sendStroke.Transparency=.18
+  sendStroke.Parent=sendButton
 
   local counter=Instance.new("TextLabel")
   counter.Name="Counter"
@@ -440,13 +459,13 @@ function M.start()
   local function submitAnnouncement()
    local message=(box.Text or ""):match("^%s*(.-)%s*$")
    if message=="" then
-    setStatus("MESSAGE REQUIRED",WARN)
+    setStatus(isFrench and "MESSAGE REQUIS" or "MESSAGE REQUIRED",WARN)
     log("Enter a server message first.",WARN)
     return
    end
    send(PREFIX.." announce "..message)
    box.Text=""
-   setStatus("SENT ✓",rgb(130,255,145))
+   setStatus(isFrench and "ENVOYÉ ✓" or "SENT ✓",rgb(130,255,145))
   end
   sendButton.Activated:Connect(submitAnnouncement)
   box.FocusLost:Connect(function(enterPressed)
