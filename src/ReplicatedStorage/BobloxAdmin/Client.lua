@@ -100,25 +100,39 @@ local function renderPlayers()
  end
  playerList.CanvasSize=UDim2.fromOffset(0,y+10)
 end
-local annRow,annAvatar,annText,annEdge,annRing,annScale,annCardStroke,annDefaultPosition
+local annRow,annAvatar,annText,annTitle,annEdge,annRing,annScale,annCardStroke,annDefaultPosition
 local annCounter=0
 local function annEscape(s) return (tostring(s):gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;")) end
 local function annFade(alpha)
+ if annTitle then annTitle.TextTransparency=alpha end
  annText.TextTransparency=alpha
- if annEdge then annEdge.Transparency=alpha end
+ if annEdge then annEdge.Transparency=math.clamp(.15+alpha*.85,0,1) end
  annAvatar.ImageTransparency=alpha
  annAvatar.BackgroundTransparency=math.clamp(alpha+.08,0,1)
  if annRing then annRing.Transparency=alpha end
  annRow.BackgroundTransparency=math.clamp(.08+alpha*.92,0,1)
  if annCardStroke then annCardStroke.Transparency=math.clamp(.08+alpha*.92,0,1) end
 end
+
+local function measureText(label,text,width)
+ local params=Instance.new("GetTextBoundsParams")
+ params.Text=text
+ params.Font=label.FontFace
+ params.Size=label.TextSize
+ params.Width=width
+ local ok,bounds=pcall(TextService.GetTextBoundsAsync,TextService,params)
+ params:Destroy()
+ if ok then return bounds end
+ return TextService:GetTextSize(text,label.TextSize,label.Font,Vector2.new(width,1000))
+end
+
 local function wireAnnouncement(pg)
  local annGui=pg:WaitForChild("AnnouncementLine",30)
  if not annGui then return end
  annRow=annGui:WaitForChild("Announcement")
  annRow.Visible=false
  annRow.AnchorPoint=Vector2.new(.5,0)
- annDefaultPosition=UDim2.new(.5,0,0,64)
+ annDefaultPosition=UDim2.new(.5,0,0,46)
  annRow.Position=annDefaultPosition
  annRow.BackgroundColor3=rgb(13,15,20)
  annRow.BackgroundTransparency=.08
@@ -150,13 +164,34 @@ local function wireAnnouncement(pg)
  grad.Parent=annRow
 
  annScale=annRow:FindFirstChildOfClass("UIScale") or Instance.new("UIScale",annRow)
+
  annAvatar=annRow:WaitForChild("Avatar")
+ annAvatar.AnchorPoint=Vector2.new(0,.5)
+ annAvatar.Position=UDim2.new(0,12,.5,0)
+ annAvatar.Size=UDim2.fromOffset(52,52)
  annAvatar.BackgroundColor3=rgb(255,184,34)
  annRing=annAvatar:FindFirstChildOfClass("UIStroke")
  if annRing then
   annRing.Color=rgb(255,218,92)
   annRing.Thickness=2
  end
+
+ annTitle=annRow:FindFirstChild("AdminAnnouncementTitle")
+ if not annTitle then
+  annTitle=Instance.new("TextLabel")
+  annTitle.Name="AdminAnnouncementTitle"
+  annTitle.BackgroundTransparency=1
+  annTitle.Font=Enum.Font.GothamBlack
+  annTitle.TextSize=18
+  annTitle.TextColor3=rgb(255,212,76)
+  annTitle.TextStrokeColor3=Color3.new(0,0,0)
+  annTitle.TextStrokeTransparency=.15
+  annTitle.TextXAlignment=Enum.TextXAlignment.Left
+  annTitle.TextYAlignment=Enum.TextYAlignment.Top
+  annTitle.ZIndex=annAvatar.ZIndex+1
+  annTitle.Parent=annRow
+ end
+
  annText=annRow:WaitForChild("Text")
  annText.RichText=true
  annText.TextWrapped=true
@@ -164,6 +199,7 @@ local function wireAnnouncement(pg)
  annText.TextXAlignment=Enum.TextXAlignment.Left
  annText.TextYAlignment=Enum.TextYAlignment.Top
  annText.TextColor3=Color3.new(1,1,1)
+ annText.ZIndex=annAvatar.ZIndex+1
  annEdge=annText:FindFirstChildOfClass("UIStroke")
  if annEdge then
   annEdge.Color=Color3.new(0,0,0)
@@ -171,44 +207,60 @@ local function wireAnnouncement(pg)
   annEdge.Transparency=.15
  end
 end
+
 local function showAnnouncement(data)
  local body=type(data)=="table" and tostring(data.text or "") or tostring(data or "")
  if body=="" or not annRow then return end
+
  local nick=tostring((type(data)=="table" and data.fromName) or "ADMIN")
- local nickColor=attrOr(annRow,"NickColor",rgb(255,205,72))
- local titleText=isFrench and "MESSAGE SERVEUR" or "SERVER ANNOUNCEMENT"
- annText.Text=('<font color="#FFD45C"><b>📢 %s</b></font>\n<font color="#%s"><b>%s</b></font>: %s'):format(titleText,nickColor:ToHex(),annEscape(nick),annEscape(body))
+ local nickColor=attrOr(annRow,"NickColor",rgb(86,178,255))
+ local titleText=isFrench and "📢 MESSAGE SERVEUR" or "📢 SERVER ANNOUNCEMENT"
+ annTitle.Text=titleText
+ annText.Text=('<font color="#%s"><b>%s</b></font>: %s'):format(nickColor:ToHex(),annEscape(nick),annEscape(body))
 
  local cam=workspace.CurrentCamera
  local viewportW=cam and cam.ViewportSize.X or 1280
- local maxW=math.clamp(math.floor(viewportW*.62),440,760)
- local minW=420
- local left=annText.Position.X.Offset
- local right=14
- local topPad=8
- local bottomPad=8
+ local maxCardW=math.clamp(math.floor(viewportW*.62),460,760)
+ local minCardW=380
+ local leftText=76
+ local rightPad=16
+ local topPad=10
+ local titleGap=4
+ local bottomPad=12
 
- local plain=titleText.."\n"..nick..": "..body
- local oneLine=TextService:GetTextSize(plain,annText.TextSize,annText.Font,Vector2.new(4000,4000))
- local w=math.clamp(math.ceil(oneLine.X)+left+right,minW,maxW)
- local textW=math.max(220,w-left-right)
+ local titleNatural=measureText(annTitle,titleText,3000)
+ local bodyPlain=nick..": "..body
+ local bodyNatural=measureText(annText,bodyPlain,3000)
+ local desiredTextW=math.max(titleNatural.X,bodyNatural.X)
+ local cardW=math.clamp(math.ceil(desiredTextW)+leftText+rightPad,minCardW,maxCardW)
+ local textW=cardW-leftText-rightPad
 
- annText.Size=UDim2.fromOffset(textW,200)
- Run.Heartbeat:Wait()
- local textH=math.max(annText.TextBounds.Y,annText.TextSize*2)
- local h=math.max(math.ceil(textH)+topPad+bottomPad,annAvatar.Size.Y.Offset+12)
+ local titleBounds=measureText(annTitle,titleText,textW)
+ local bodyBounds=measureText(annText,bodyPlain,textW)
+ local titleH=math.ceil(titleBounds.Y)
+ local bodyH=math.ceil(bodyBounds.Y)
 
- annText.Size=UDim2.fromOffset(textW,math.ceil(textH))
- annText.Position=UDim2.fromOffset(left,topPad)
- annRow.Size=UDim2.fromOffset(w,h)
+ annTitle.Position=UDim2.fromOffset(leftText,topPad)
+ annTitle.Size=UDim2.fromOffset(textW,titleH)
+ annText.Position=UDim2.fromOffset(leftText,topPad+titleH+titleGap)
+ annText.Size=UDim2.fromOffset(textW,bodyH)
+
+ local contentH=topPad+titleH+titleGap+bodyH+bottomPad
+ local cardH=math.max(contentH,76)
+ annRow.Size=UDim2.fromOffset(cardW,cardH)
 
  local fit=1
- if cam and cam.ViewportSize.X>0 then fit=math.min(1,cam.ViewportSize.X*.90/w) end
+ if cam and cam.ViewportSize.X>0 then
+  fit=math.min(1,cam.ViewportSize.X*.92/cardW)
+ end
+
  local userId=type(data)=="table" and tonumber(data.fromUserId) or nil
  annAvatar.Image=""
  if userId and userId>0 then
   task.spawn(function()
-   local ok,url=pcall(function() return Players:GetUserThumbnailAsync(userId,Enum.ThumbnailType.HeadShot,Enum.ThumbnailSize.Size150x150) end)
+   local ok,url=pcall(function()
+    return Players:GetUserThumbnailAsync(userId,Enum.ThumbnailType.HeadShot,Enum.ThumbnailSize.Size150x150)
+   end)
    if ok and annAvatar then annAvatar.Image=url end
   end)
  end
@@ -218,17 +270,13 @@ local function showAnnouncement(data)
  annFade(0)
  annRow.Visible=true
  annScale.Scale=fit*.82
- if annDefaultPosition then
-  annRow.Position=annDefaultPosition-UDim2.fromOffset(0,26)
- end
+ annRow.Position=annDefaultPosition-UDim2.fromOffset(0,20)
  TweenService:Create(annScale,TweenInfo.new(.30,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=fit}):Play()
- if annDefaultPosition then
-  TweenService:Create(annRow,TweenInfo.new(.30,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{Position=annDefaultPosition}):Play()
- end
+ TweenService:Create(annRow,TweenInfo.new(.30,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{Position=annDefaultPosition}):Play()
 
  task.delay(7,function()
   if annCounter~=mine then return end
-  local target=annDefaultPosition and (annDefaultPosition-UDim2.fromOffset(0,18)) or annRow.Position
+  local target=annDefaultPosition-UDim2.fromOffset(0,16)
   TweenService:Create(annRow,TweenInfo.new(.35,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Position=target,BackgroundTransparency=1}):Play()
   local started=os.clock()
   while os.clock()-started<.35 do
@@ -238,7 +286,7 @@ local function showAnnouncement(data)
   end
   if annCounter==mine then
    annRow.Visible=false
-   if annDefaultPosition then annRow.Position=annDefaultPosition end
+   annRow.Position=annDefaultPosition
   end
  end)
 end
