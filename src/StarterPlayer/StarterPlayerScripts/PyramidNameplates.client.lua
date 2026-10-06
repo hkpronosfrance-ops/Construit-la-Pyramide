@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
@@ -90,7 +91,7 @@ local function build(p, head)
 		count.Text = pyramids >= 1000 and (math.floor(pyramids / 100) / 10 .. "K") or tostring(pyramids)
 
 		local style
-		if p:GetAttribute("IsAdmin") == true then
+		if p:GetAttribute("IsAdmin") == true or (RunService:IsStudio() and p == player) then
 			rank.Text = "👑 ADMIN"
 			style = R.AdminStyle
 			setAdminFx(true)
