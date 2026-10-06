@@ -36,6 +36,8 @@ local function build(p, head)
 	local gradient = rank:FindFirstChildOfClass("UIGradient") or Instance.new("UIGradient", rank)
 	local rankScale = rank:FindFirstChildOfClass("UIScale") or Instance.new("UIScale", rank)
 	local normalStrokeThickness = rankInk.Thickness
+	local normalStrokeTransparency = rankInk.Transparency
+	local normalTextColor = rank.TextColor3
 	local pulseTween
 	local shineTween
 	local adminFxOn = false
@@ -58,18 +60,22 @@ local function build(p, head)
 		rankScale.Scale = 1
 		gradient.Offset = Vector2.new(0, 0)
 		rankInk.Thickness = normalStrokeThickness
+		rankInk.Transparency = normalStrokeTransparency
+		rank.TextColor3 = normalTextColor
 
 		if on then
-			rankInk.Thickness = math.max(normalStrokeThickness, 2.4)
+			rank.TextColor3 = Color3.new(1, 1, 1)
+			rankInk.Thickness = math.max(normalStrokeThickness, 2.8)
+			rankInk.Transparency = 0
 			pulseTween = TweenService:Create(
 				rankScale,
-				TweenInfo.new(1.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-				{ Scale = 1.06 }
+				TweenInfo.new(1.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+				{ Scale = 1.045 }
 			)
 			shineTween = TweenService:Create(
 				gradient,
-				TweenInfo.new(1.7, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true),
-				{ Offset = Vector2.new(0.28, 0) }
+				TweenInfo.new(1.55, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true),
+				{ Offset = Vector2.new(0.38, 0) }
 			)
 			pulseTween:Play()
 			shineTween:Play()
