@@ -582,9 +582,16 @@ function M.start()
   local multBox=makeField("Multiplier",10,86,isFrench and "MULTIPLICATEUR" or "MULTIPLIER","2")
   local durationBox=makeField("Duration",104,96,isFrench and "DURÉE (MIN)" or "DURATION (MIN)","10")
 
+  local function liftButton(b,z)
+   local delta=z-b.ZIndex
+   b.ZIndex=z
+   for _,d in b:GetDescendants() do
+    if d:IsA("GuiObject") then d.ZIndex+=delta end
+   end
+  end
   local function serverButton(name,textValue,xScale,wScale,color)
    local b=T.button(boost,name,textValue,UDim2.new(xScale,4,0,88),UDim2.new(wScale,-8,0,28),color)
-   b.ZIndex=22
+   liftButton(b,22)
    return b
   end
   local speedButton=serverButton("ServerSpeed",isFrench and "VITESSE" or "SPEED",0,.2,rgb(55,165,255))
@@ -602,7 +609,8 @@ function M.start()
 
   local stopButton=T.button(boost,"StopServerBoosts",isFrench and "ARRÊTER TOUT" or "STOP ALL",
    UDim2.new(1,-104,0,119),UDim2.fromOffset(94,28),rgb(198,48,48))
-  stopButton.AnchorPoint=Vector2.new(0,0) stopButton.ZIndex=22
+  stopButton.AnchorPoint=Vector2.new(0,0)
+  liftButton(stopButton,22)
 
   local activeStatus=Instance.new("TextLabel")
   activeStatus.Name="ActiveStatus" activeStatus.BackgroundTransparency=1 activeStatus.Position=UDim2.fromOffset(10,148)
@@ -620,9 +628,13 @@ function M.start()
    pageServer.CanvasSize=pageServer.CanvasSize+UDim2.fromOffset(0,190)
   end
 
+  local function parseDecimal(value)
+   local normalized=(tostring(value or ""):gsub(",","."))
+   return tonumber(normalized)
+  end
   local function startServerBoost(kind)
-   local multiplier=tonumber((multBox.Text or ""):gsub(",","."))
-   local minutes=tonumber((durationBox.Text or ""):gsub(",","."))
+   local multiplier=parseDecimal(multBox.Text)
+   local minutes=parseDecimal(durationBox.Text)
    if not multiplier or multiplier<1 or multiplier>100 then
     log(isFrench and "Multiplicateur invalide (1 à 100)." or "Invalid multiplier (1 to 100).",WARN)
     return
