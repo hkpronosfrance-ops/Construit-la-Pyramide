@@ -45,15 +45,30 @@ local function styleAdminLabel(o)
 		o.Text = "ADMINISTRATEUR"
 	end
 
-	o.TextColor3 = Color3.fromRGB(8, 8, 8)
-	o.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
-	o.TextStrokeTransparency = 0
 	o.Font = Enum.Font.GothamBlack
+	o.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+	o.BackgroundTransparency = 0.08
+	o.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	o.TextStrokeTransparency = 0
+
+	if isMultiplier then
+		o.TextColor3 = Color3.fromRGB(255, 210, 55)
+	else
+		o.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end
 
 	local gradient = o:FindFirstChildOfClass("UIGradient")
 	if gradient then
 		gradient.Enabled = false
 	end
+
+	local corner = o:FindFirstChild("AdminZoneCorner")
+	if not corner then
+		corner = Instance.new("UICorner")
+		corner.Name = "AdminZoneCorner"
+		corner.Parent = o
+	end
+	corner.CornerRadius = UDim.new(0, isMultiplier and 10 or 8)
 
 	local stroke = o:FindFirstChild("AdminZoneStroke")
 	if not stroke then
@@ -63,9 +78,9 @@ local function styleAdminLabel(o)
 		stroke.LineJoinMode = Enum.LineJoinMode.Round
 		stroke.Parent = o
 	end
-	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Color = Color3.fromRGB(255, 190, 35)
 	stroke.Transparency = 0
-	stroke.Thickness = isMultiplier and 3.5 or 2.5
+	stroke.Thickness = isMultiplier and 3 or 2
 end
 
 local function styleAdminZone()
