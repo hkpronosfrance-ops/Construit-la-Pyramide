@@ -107,6 +107,11 @@ local function translateFrench(text)
 		return "+" .. coins:gsub(",", " ") .. " pièces !"
 	end
 
+	local blockAmount, blockPlural = text:match("^%+([%d,]+) Block(s?)$")
+	if blockAmount then
+		return "+" .. blockAmount:gsub(",", " ") .. (blockPlural == "s" and " Blocs" or " Bloc")
+	end
+
 	return nil
 end
 
