@@ -128,16 +128,16 @@ local function makeCard(def, order)
 	icon.Image = def.icon
 	icon.ScaleType = Enum.ScaleType.Fit
 	icon.AnchorPoint = Vector2.new(0.5,0.5)
-	icon.Position = UDim2.new(0,23,0.5,0)
-	icon.Size = UDim2.fromOffset(34,34)
+	icon.Position = UDim2.new(0,27,0.5,0)
+	icon.Size = UDim2.fromOffset(32,32)
 	icon.ZIndex = 6
 	icon.Parent = fill
 
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.fromOffset(39,7)
-	title.Size = UDim2.fromOffset(83,17)
+	title.Position = UDim2.fromOffset(43,7)
+	title.Size = UDim2.fromOffset(79,17)
 	title.Font = Enum.Font.FredokaOne
 	title.TextScaled = false
 	title.TextSize = 9
@@ -153,8 +153,8 @@ local function makeCard(def, order)
 	local timerBack = Instance.new("Frame")
 	timerBack.Name = "TimerBack"
 	timerBack.AnchorPoint = Vector2.new(0.5,0)
-	timerBack.Position = UDim2.new(0,82,0,30)
-	timerBack.Size = UDim2.fromOffset(52,13)
+	timerBack.Position = UDim2.new(0,84,0,30)
+	timerBack.Size = UDim2.fromOffset(50,13)
 	timerBack.BackgroundColor3 = rgb(13,47,20)
 	timerBack.BackgroundTransparency = 0.08
 	timerBack.BorderSizePixel = 0
@@ -174,7 +174,7 @@ local function makeCard(def, order)
 	timer.Size = UDim2.fromScale(1,1)
 	timer.BackgroundTransparency = 1
 	timer.Font = Enum.Font.GothamBlack
-	timer.TextSize = 7
+	timer.TextSize = 8
 	timer.TextColor3 = rgb(110,255,125)
 	timer.TextStrokeColor3 = rgb(5,25,8)
 	timer.TextStrokeTransparency = 0.25
@@ -184,8 +184,8 @@ local function makeCard(def, order)
 	local accent = Instance.new("Frame")
 	accent.Name = "Accent"
 	accent.AnchorPoint = Vector2.new(0,0.5)
-	accent.Position = UDim2.new(0,4,0.5,0)
-	accent.Size = UDim2.fromOffset(3,34)
+	accent.Position = UDim2.new(0,5,0.5,0)
+	accent.Size = UDim2.fromOffset(2,32)
 	accent.BackgroundColor3 = def.top
 	accent.BorderSizePixel = 0
 	accent.ZIndex = 8
