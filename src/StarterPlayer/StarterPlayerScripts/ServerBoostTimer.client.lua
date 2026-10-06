@@ -136,11 +136,11 @@ local function makeCard(def, order)
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.fromOffset(43,7)
-	title.Size = UDim2.fromOffset(77,17)
+	title.Position = UDim2.fromOffset(46,4)
+	title.Size = UDim2.fromOffset(74,22)
 	title.Font = Enum.Font.FredokaOne
 	title.TextScaled = false
-	title.TextSize = 10
+	title.TextSize = 16
 	title.TextColor3 = Color3.new(1,1,1)
 	title.TextStrokeColor3 = Tile.Ink
 	title.TextStrokeTransparency = 0
@@ -154,7 +154,7 @@ local function makeCard(def, order)
 	timerBack.Name = "TimerBack"
 	timerBack.AnchorPoint = Vector2.new(0.5,0)
 	timerBack.Position = UDim2.new(0,83,0,29)
-	timerBack.Size = UDim2.fromOffset(52,14)
+	timerBack.Size = UDim2.fromOffset(56,16)
 	timerBack.BackgroundColor3 = rgb(13,47,20)
 	timerBack.BackgroundTransparency = 0.08
 	timerBack.BorderSizePixel = 0
@@ -174,7 +174,7 @@ local function makeCard(def, order)
 	timer.Size = UDim2.fromScale(1,1)
 	timer.BackgroundTransparency = 1
 	timer.Font = Enum.Font.GothamBlack
-	timer.TextSize = 9
+	timer.TextSize = 10
 	timer.TextColor3 = rgb(110,255,125)
 	timer.TextStrokeColor3 = rgb(5,25,8)
 	timer.TextStrokeTransparency = 0.25
@@ -229,7 +229,7 @@ local function refresh()
 		card.frame.Visible = on
 		if on then
 			active += 1
-			card.title.Text = fmtMult(mult).."x "..(isFrench and def.fr or def.en)
+			card.title.Text = fmtMult(mult).."x"
 			card.timer.Text = fmtTime(remain)
 		end
 	end
