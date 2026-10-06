@@ -128,22 +128,22 @@ local function makeCard(def, order)
 	icon.Image = def.icon
 	icon.ScaleType = Enum.ScaleType.Fit
 	icon.AnchorPoint = Vector2.new(0.5,0.5)
-	icon.Position = UDim2.new(0,27,0.5,0)
-	icon.Size = UDim2.fromOffset(32,32)
+	icon.Position = UDim2.new(0,28,0.5,0)
+	icon.Size = UDim2.fromOffset(35,35)
 	icon.ZIndex = 6
 	icon.Parent = fill
 
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.fromOffset(46,4)
-	title.Size = UDim2.fromOffset(74,22)
+	title.Position = UDim2.fromOffset(48,5)
+	title.Size = UDim2.fromOffset(70,21)
 	title.Font = Enum.Font.FredokaOne
 	title.TextScaled = false
-	title.TextSize = 16
+	title.TextSize = 17
 	title.TextColor3 = Color3.new(1,1,1)
 	title.TextStrokeColor3 = Tile.Ink
-	title.TextStrokeTransparency = 0
+	title.TextStrokeTransparency = 0.02
 	title.TextXAlignment = Enum.TextXAlignment.Center
 	title.TextYAlignment = Enum.TextYAlignment.Center
 	title.TextTruncate = Enum.TextTruncate.AtEnd
@@ -153,9 +153,9 @@ local function makeCard(def, order)
 	local timerBack = Instance.new("Frame")
 	timerBack.Name = "TimerBack"
 	timerBack.AnchorPoint = Vector2.new(0.5,0)
-	timerBack.Position = UDim2.new(0,83,0,29)
-	timerBack.Size = UDim2.fromOffset(56,16)
-	timerBack.BackgroundColor3 = rgb(13,47,20)
+	timerBack.Position = UDim2.new(0,83,0,28)
+	timerBack.Size = UDim2.fromOffset(60,17)
+	timerBack.BackgroundColor3 = rgb(10,38,17)
 	timerBack.BackgroundTransparency = 0.08
 	timerBack.BorderSizePixel = 0
 	timerBack.ZIndex = 7
@@ -165,7 +165,7 @@ local function makeCard(def, order)
 	tc.Parent = timerBack
 	local ts = Instance.new("UIStroke")
 	ts.Color = rgb(58,210,78)
-	ts.Thickness = 1.2
+	ts.Thickness = 1.4
 	ts.Transparency = 0.15
 	ts.Parent = timerBack
 
@@ -174,25 +174,12 @@ local function makeCard(def, order)
 	timer.Size = UDim2.fromScale(1,1)
 	timer.BackgroundTransparency = 1
 	timer.Font = Enum.Font.GothamBlack
-	timer.TextSize = 10
-	timer.TextColor3 = rgb(110,255,125)
-	timer.TextStrokeColor3 = rgb(5,25,8)
-	timer.TextStrokeTransparency = 0.25
+	timer.TextSize = 11
+	timer.TextColor3 = Color3.new(1,1,1)
+	timer.TextStrokeColor3 = rgb(5,20,8)
+	timer.TextStrokeTransparency = 0.15
 	timer.ZIndex = 8
 	timer.Parent = timerBack
-
-	local accent = Instance.new("Frame")
-	accent.Name = "Accent"
-	accent.AnchorPoint = Vector2.new(0,0.5)
-	accent.Position = UDim2.new(0,5,0.5,0)
-	accent.Size = UDim2.fromOffset(2,32)
-	accent.BackgroundColor3 = def.top
-	accent.BorderSizePixel = 0
-	accent.ZIndex = 8
-	accent.Parent = fill
-	local accentCorner = Instance.new("UICorner")
-	accentCorner.CornerRadius = UDim.new(1,0)
-	accentCorner.Parent = accent
 
 	cards[def.key] = {
 		frame = card,
