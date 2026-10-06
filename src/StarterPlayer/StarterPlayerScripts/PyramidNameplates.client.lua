@@ -83,7 +83,7 @@ local function build(p, head)
 			-- Match the animated rainbow used by the +50,000 pyramid-fill button.
 			rank.TextColor3 = Color3.new(1, 1, 1)
 			rankInk.Color = Color3.fromRGB(0, 0, 0)
-			rankInk.Thickness = math.max(normalStrokeThickness, 3.2)
+			rankInk.Thickness = math.max(normalStrokeThickness, 4.2)
 			rankInk.Transparency = 0
 			gradient.Enabled = true
 			gradient.Rotation = 0
@@ -127,7 +127,13 @@ local function build(p, head)
 
 		gradient.Color = R.sequence(style)
 		gradient.Rotation = style.Horizontal and 0 or 90
-		rankInk.Color = style.Ink
+		if p.UserId == OWNER_USER_ID then
+			rankInk.Color = Color3.fromRGB(0, 0, 0)
+			rankInk.Thickness = math.max(normalStrokeThickness, 4.2)
+			rankInk.Transparency = 0
+		else
+			rankInk.Color = style.Ink
+		end
 		hug(rank)
 	end
 	paint()
