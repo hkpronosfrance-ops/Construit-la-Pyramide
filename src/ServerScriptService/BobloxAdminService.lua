@@ -99,7 +99,11 @@ function M.Start(folder,adapter)
    if live then ok,record=pcall(function() return bans:GetAsync(tostring(p.UserId)) end) end
    if not ok then warn("[Admin] Ban check failed for "..p.UserId) end
    if ok and record and p.Parent then p:Kick("You are banned from this experience.") return end
-   if p.Parent and authorized(p) then remote:FireClient(p,"auth",true) end
+   if p.Parent then
+    local isAdmin=authorized(p)
+    p:SetAttribute("IsAdmin",isAdmin)
+    if isAdmin then remote:FireClient(p,"auth",true) end
+   end
   end)
  end
  Players.PlayerAdded:Connect(added)
