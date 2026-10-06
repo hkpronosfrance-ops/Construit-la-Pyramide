@@ -12,7 +12,15 @@ if not sourceGui then
 end
 
 local stats = sourceGui:WaitForChild("Stats", 15)
-if not stats then
+local boostTemplates = sourceGui:WaitForChild("Boosts", 15)
+if not (stats and boostTemplates) then
+	return
+end
+
+local speedTemplate = boostTemplates:FindFirstChild("SpeedBoost")
+local strengthTemplate = boostTemplates:FindFirstChild("StrengthBoost")
+if not (speedTemplate and strengthTemplate) then
+	warn("[ServerBoostTimer] Existing SpeedBoost/StrengthBoost templates were not found.")
 	return
 end
 
@@ -27,10 +35,42 @@ end
 local rgb = Color3.fromRGB
 
 local defs = {
-	{ key = "Coins", fr = "PIÈCES", en = "COINS", color = rgb(255, 205, 45) },
-	{ key = "Speed", fr = "VITESSE", en = "SPEED", color = rgb(75, 180, 255) },
-	{ key = "Strength", fr = "FORCE", en = "STRENGTH", color = rgb(255, 104, 86) },
-	{ key = "Pyramids", fr = "PYRAMIDES", en = "PYRAMIDS", color = rgb(192, 103, 255) },
+	{
+		key = "Coins",
+		fr = "PIÈCES",
+		en = "COINS",
+		template = "Strength",
+		rim = rgb(167, 109, 0),
+		top = rgb(255, 235, 86),
+		bottom = rgb(255, 151, 20),
+	},
+	{
+		key = "Speed",
+		fr = "VITESSE",
+		en = "SPEED",
+		template = "Speed",
+		rim = rgb(24, 86, 190),
+		top = rgb(150, 225, 255),
+		bottom = rgb(40, 140, 255),
+	},
+	{
+		key = "Strength",
+		fr = "FORCE",
+		en = "STRENGTH",
+		template = "Strength",
+		rim = rgb(190, 84, 8),
+		top = rgb(255, 236, 110),
+		bottom = rgb(255, 140, 20),
+	},
+	{
+		key = "Pyramids",
+		fr = "PYRAMIDES",
+		en = "PYRAMIDS",
+		template = "Speed",
+		rim = rgb(100, 35, 181),
+		top = rgb(240, 143, 255),
+		bottom = rgb(145, 57, 255),
+	},
 }
 
 local old = pg:FindFirstChild("ServerBoostTimer")
@@ -48,14 +88,14 @@ gui.Parent = pg
 local holder = Instance.new("Frame")
 holder.Name = "Holder"
 holder.AnchorPoint = Vector2.new(1, 1)
-holder.Position = UDim2.new(1, -22, 1, -146)
-holder.Size = UDim2.fromOffset(190, 220)
+holder.Position = UDim2.new(1, -14, 1, -146)
+holder.Size = UDim2.fromOffset(208, 300)
 holder.BackgroundTransparency = 1
 holder.Visible = false
 holder.Parent = gui
 
-local scale = Instance.new("UIScale")
-scale.Parent = holder
+local rootScale = Instance.new("UIScale")
+rootScale.Parent = holder
 
 local function resize()
 	local cam = workspace.CurrentCamera
@@ -63,31 +103,16 @@ local function resize()
 		return
 	end
 	local v = cam.ViewportSize
-	scale.Scale = math.clamp(math.min(v.X / 1500, v.Y / 860), 0.62, 1)
+	rootScale.Scale = math.clamp(math.min(v.X / 1500, v.Y / 860), 0.62, 1)
 end
 resize()
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize)
 
-local title = Instance.new("TextLabel")
-title.Name = "Title"
-title.AnchorPoint = Vector2.new(1, 1)
-title.Position = UDim2.new(1, 0, 1, 0)
-title.Size = UDim2.fromOffset(190, 18)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBlack
-title.TextSize = 11
-title.TextColor3 = rgb(255, 224, 86)
-title.TextStrokeColor3 = rgb(20, 15, 8)
-title.TextStrokeTransparency = 0.15
-title.TextXAlignment = Enum.TextXAlignment.Right
-title.Text = isFrench and "BONUS SERVEUR" or "SERVER BOOSTS"
-title.Parent = holder
-
 local rows = Instance.new("Frame")
 rows.Name = "Rows"
 rows.AnchorPoint = Vector2.new(1, 1)
-rows.Position = UDim2.new(1, 0, 1, -22)
-rows.Size = UDim2.fromOffset(190, 192)
+rows.Position = UDim2.new(1, 0, 1, 0)
+rows.Size = UDim2.fromOffset(208, 300)
 rows.BackgroundTransparency = 1
 rows.Parent = holder
 
@@ -95,7 +120,7 @@ local layout = Instance.new("UIListLayout")
 layout.FillDirection = Enum.FillDirection.Vertical
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-layout.Padding = UDim.new(0, 6)
+layout.Padding = UDim.new(0, 7)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 layout.Parent = rows
 
@@ -132,120 +157,134 @@ local function findSourceIcon(key)
 	return best
 end
 
+local function sanitizeTemplate(clone, def)
+	local price = clone:FindFirstChild("Price", true)
+	if price and price:IsA("GuiObject") then
+		price.Visible = false
+	end
+
+	for _, obj in clone:GetDescendants() do
+		if obj:IsA("GuiButton") then
+			obj.Active = false
+			obj.Selectable = false
+			obj.AutoButtonColor = false
+		end
+		if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+			obj.TextTransparency = 1
+			obj.TextStrokeTransparency = 1
+		elseif (obj:IsA("ImageLabel") or obj:IsA("ImageButton")) and obj.Name:lower():find("icon", 1, true) then
+			obj.ImageTransparency = 1
+		elseif obj:IsA("UIStroke") then
+			obj.Color = def.rim
+		elseif obj:IsA("UIGradient") then
+			obj.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, def.top),
+				ColorSequenceKeypoint.new(1, def.bottom),
+			})
+		end
+	end
+end
+
 local cards = {}
+local TARGET_W = 196
+local TARGET_H = 72
 
 local function makeCard(def, order)
-	local card = Instance.new("Frame")
-	card.Name = def.key
-	card.LayoutOrder = order
-	card.Size = UDim2.fromOffset(176, 40)
-	card.BackgroundColor3 = rgb(20, 23, 31)
-	card.BackgroundTransparency = 0.04
-	card.BorderSizePixel = 0
-	card.Visible = false
-	card.Parent = rows
+	local shell = Instance.new("Frame")
+	shell.Name = def.key
+	shell.LayoutOrder = order
+	shell.Size = UDim2.fromOffset(TARGET_W, TARGET_H)
+	shell.BackgroundTransparency = 1
+	shell.Visible = false
+	shell.Parent = rows
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 9)
-	corner.Parent = card
+	local template = def.template == "Strength" and strengthTemplate or speedTemplate
+	local art = template:Clone()
+	art.Name = "BoostArt"
+	art.AnchorPoint = Vector2.new(0.5, 0.5)
+	art.Position = UDim2.fromScale(0.5, 0.5)
+	art.Visible = true
+	art.Parent = shell
+	sanitizeTemplate(art, def)
 
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = def.color
-	stroke.Thickness = 2
-	stroke.Transparency = 0.04
-	stroke.Parent = card
+	local abs = template.AbsoluteSize
+	local sourceW = math.max(abs.X, template.Size.X.Offset, 1)
+	local sourceH = math.max(abs.Y, template.Size.Y.Offset, 1)
+	local fit = math.min(TARGET_W / sourceW, TARGET_H / sourceH)
+	local artScale = Instance.new("UIScale")
+	artScale.Scale = fit
+	artScale.Parent = art
 
-	local gradient = Instance.new("UIGradient")
-	gradient.Rotation = 0
-	gradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, rgb(18, 20, 27)),
-		ColorSequenceKeypoint.new(0.62, rgb(31, 34, 44)),
-		ColorSequenceKeypoint.new(1, def.color:Lerp(rgb(30, 31, 38), 0.72)),
-	})
-	gradient.Parent = card
-
-	local iconBack = Instance.new("Frame")
-	iconBack.Name = "IconBack"
-	iconBack.AnchorPoint = Vector2.new(0, 0.5)
-	iconBack.Position = UDim2.new(0, 5, 0.5, 0)
-	iconBack.Size = UDim2.fromOffset(36, 36)
-	iconBack.BackgroundColor3 = rgb(10, 12, 17)
-	iconBack.BackgroundTransparency = 0.14
-	iconBack.BorderSizePixel = 0
-	iconBack.ZIndex = 2
-	iconBack.Parent = card
-	local iconCorner = Instance.new("UICorner")
-	iconCorner.CornerRadius = UDim.new(0, 8)
-	iconCorner.Parent = iconBack
-
-	local source = findSourceIcon(def.key)
-	local icon
-	if source then
-		icon = source:Clone()
-		icon.Name = "StatIcon"
+	local sourceIcon = findSourceIcon(def.key)
+	if sourceIcon then
+		local icon = sourceIcon:Clone()
+		icon.Name = "ServerStatIcon"
 		icon.AnchorPoint = Vector2.new(0.5, 0.5)
-		icon.Position = UDim2.fromScale(0.5, 0.5)
-		icon.Size = UDim2.fromOffset(31, 31)
+		icon.Position = UDim2.new(0, 38, 0.5, 0)
+		icon.Size = UDim2.fromOffset(48, 48)
 		icon.BackgroundTransparency = 1
 		icon.Visible = true
-		icon.ZIndex = 3
-		icon.Parent = iconBack
+		icon.ZIndex = 30
+		icon.Parent = shell
 		for _, child in icon:GetDescendants() do
 			if child:IsA("GuiObject") then
-				child.ZIndex = math.max(child.ZIndex, 3)
+				child.ZIndex = math.max(child.ZIndex, 30)
 			end
 		end
 	end
 
-	local name = Instance.new("TextLabel")
-	name.Name = "Name"
-	name.BackgroundTransparency = 1
-	name.Position = UDim2.fromOffset(47, 3)
-	name.Size = UDim2.fromOffset(75, 15)
-	name.Font = Enum.Font.GothamBlack
-	name.TextSize = 9
-	name.TextColor3 = Color3.new(1, 1, 1)
-	name.TextStrokeColor3 = rgb(8, 9, 12)
-	name.TextStrokeTransparency = 0.25
-	name.TextXAlignment = Enum.TextXAlignment.Left
-	name.Text = isFrench and def.fr or def.en
-	name.ZIndex = 3
-	name.Parent = card
+	local main = Instance.new("TextLabel")
+	main.Name = "Main"
+	main.BackgroundTransparency = 1
+	main.Position = UDim2.fromOffset(67, 10)
+	main.Size = UDim2.fromOffset(119, 27)
+	main.Font = Enum.Font.FredokaOne
+	main.TextSize = 20
+	main.TextScaled = false
+	main.TextColor3 = Color3.new(1, 1, 1)
+	main.TextStrokeColor3 = rgb(18, 12, 8)
+	main.TextStrokeTransparency = 0
+	main.TextXAlignment = Enum.TextXAlignment.Center
+	main.TextYAlignment = Enum.TextYAlignment.Center
+	main.ZIndex = 31
+	main.Parent = shell
 
-	local mult = Instance.new("TextLabel")
-	mult.Name = "Multiplier"
-	mult.BackgroundTransparency = 1
-	mult.Position = UDim2.fromOffset(47, 17)
-	mult.Size = UDim2.fromOffset(50, 18)
-	mult.Font = Enum.Font.GothamBlack
-	mult.TextSize = 13
-	mult.TextColor3 = def.color
-	mult.TextStrokeColor3 = rgb(8, 9, 12)
-	mult.TextStrokeTransparency = 0.2
-	mult.TextXAlignment = Enum.TextXAlignment.Left
-	mult.Text = "x2"
-	mult.ZIndex = 3
-	mult.Parent = card
+	local timerBack = Instance.new("Frame")
+	timerBack.Name = "TimerBack"
+	timerBack.AnchorPoint = Vector2.new(0.5, 0)
+	timerBack.Position = UDim2.new(0, 126, 0, 40)
+	timerBack.Size = UDim2.fromOffset(102, 22)
+	timerBack.BackgroundColor3 = rgb(19, 25, 20)
+	timerBack.BackgroundTransparency = 0.08
+	timerBack.BorderSizePixel = 0
+	timerBack.ZIndex = 30
+	timerBack.Parent = shell
+	local timerCorner = Instance.new("UICorner")
+	timerCorner.CornerRadius = UDim.new(0, 6)
+	timerCorner.Parent = timerBack
+	local timerStroke = Instance.new("UIStroke")
+	timerStroke.Color = rgb(49, 210, 76)
+	timerStroke.Thickness = 1.5
+	timerStroke.Transparency = 0.15
+	timerStroke.Parent = timerBack
 
 	local timer = Instance.new("TextLabel")
 	timer.Name = "Timer"
-	timer.AnchorPoint = Vector2.new(1, 0.5)
-	timer.Position = UDim2.new(1, -8, 0.5, 0)
-	timer.Size = UDim2.fromOffset(72, 24)
+	timer.Size = UDim2.fromScale(1, 1)
 	timer.BackgroundTransparency = 1
 	timer.Font = Enum.Font.GothamBlack
-	timer.TextSize = 13
-	timer.TextColor3 = Color3.new(1, 1, 1)
-	timer.TextStrokeColor3 = rgb(8, 9, 12)
-	timer.TextStrokeTransparency = 0.15
-	timer.TextXAlignment = Enum.TextXAlignment.Right
-	timer.Text = "09:59"
-	timer.ZIndex = 3
-	timer.Parent = card
+	timer.TextSize = 11
+	timer.TextColor3 = rgb(104, 255, 119)
+	timer.TextStrokeColor3 = rgb(8, 20, 10)
+	timer.TextStrokeTransparency = 0.25
+	timer.TextXAlignment = Enum.TextXAlignment.Center
+	timer.TextYAlignment = Enum.TextYAlignment.Center
+	timer.ZIndex = 31
+	timer.Parent = timerBack
 
 	cards[def.key] = {
-		frame = card,
-		mult = mult,
+		frame = shell,
+		main = main,
 		timer = timer,
 	}
 end
@@ -255,8 +294,7 @@ for index, def in defs do
 end
 
 local function formatMultiplier(value)
-	local text = string.format("%.2f", value):gsub("%.?0+$", "")
-	return "x" .. text
+	return string.format("%.2f", value):gsub("%.?0+$", "")
 end
 
 local function formatTime(seconds)
@@ -284,13 +322,13 @@ local function refresh()
 		card.frame.Visible = on
 		if on then
 			active += 1
-			card.mult.Text = formatMultiplier(multiplier)
-			card.timer.Text = formatTime(remaining)
+			local name = isFrench and def.fr or def.en
+			card.main.Text = string.format("%sx %s", formatMultiplier(multiplier), name)
+			card.timer.Text = (isFrench and "⏱ " or "⏱ ") .. formatTime(remaining)
 		end
 	end
 
 	holder.Visible = active > 0
-	title.Visible = active > 0
 end
 
 for _, def in defs do
