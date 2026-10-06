@@ -27,6 +27,74 @@ local function pads()
 	return gym and gym:FindFirstChild("Pads")
 end
 
+local ADMIN_ZONE_NAME = "Region_ADMIN"
+
+local function styleAdminLabel(o)
+	if not (o:IsA("TextLabel") or o:IsA("TextButton") or o:IsA("TextBox")) then
+		return
+	end
+
+	local text = string.upper(o.Text or "")
+	local isMultiplier = text == "250X"
+	local isAdmin = text == "ADMIN" or text == "ADMINISTRATEUR"
+	if not (isMultiplier or isAdmin) then
+		return
+	end
+
+	if isAdmin and isFrench then
+		o.Text = "ADMINISTRATEUR"
+	end
+
+	o.TextColor3 = Color3.fromRGB(8, 8, 8)
+	o.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
+	o.TextStrokeTransparency = 0
+	o.Font = Enum.Font.GothamBlack
+
+	local gradient = o:FindFirstChildOfClass("UIGradient")
+	if gradient then
+		gradient.Enabled = false
+	end
+
+	local stroke = o:FindFirstChild("AdminZoneStroke")
+	if not stroke then
+		stroke = Instance.new("UIStroke")
+		stroke.Name = "AdminZoneStroke"
+		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		stroke.LineJoinMode = Enum.LineJoinMode.Round
+		stroke.Parent = o
+	end
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Transparency = 0
+	stroke.Thickness = isMultiplier and 3.5 or 2.5
+end
+
+local function styleAdminZone()
+	local p = pads()
+	local zone = p and p:FindFirstChild(ADMIN_ZONE_NAME)
+	if not zone then
+		return
+	end
+
+	for _, o in zone:GetDescendants() do
+		styleAdminLabel(o)
+	end
+	zone.DescendantAdded:Connect(function(o)
+		task.defer(styleAdminLabel, o)
+	end)
+end
+
+task.spawn(function()
+	local deadline = os.clock() + 30
+	repeat
+		styleAdminZone()
+		local p = pads()
+		if p and p:FindFirstChild(ADMIN_ZONE_NAME) then
+			break
+		end
+		task.wait(0.5)
+	until os.clock() >= deadline
+end)
+
 local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidTraining", 30)
 if not gui then return end
 local msg = gui:WaitForChild("Message")
