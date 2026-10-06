@@ -22,7 +22,8 @@ local function training()
 	return player:GetAttribute("BenchLocal") or player:GetAttribute("OnTreadmill")
 end
 
-local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidCinematic")
+local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidCinematic", 30)
+if not gui then return end
 local dark = gui:WaitForChild("Dark")
 dark.BackgroundTransparency = 1
 
