@@ -123,6 +123,7 @@ local function wireAnnouncement(pg)
  annRow.BackgroundColor3=rgb(13,15,20)
  annRow.BackgroundTransparency=.08
  annRow.BorderSizePixel=0
+ annRow.ClipsDescendants=true
 
  local corner=annRow:FindFirstChild("AdminAnnouncementCorner") or Instance.new("UICorner")
  corner.Name="AdminAnnouncementCorner"
@@ -159,8 +160,9 @@ local function wireAnnouncement(pg)
  annText=annRow:WaitForChild("Text")
  annText.RichText=true
  annText.TextWrapped=true
+ annText.AutomaticSize=Enum.AutomaticSize.None
  annText.TextXAlignment=Enum.TextXAlignment.Left
- annText.TextYAlignment=Enum.TextYAlignment.Center
+ annText.TextYAlignment=Enum.TextYAlignment.Top
  annText.TextColor3=Color3.new(1,1,1)
  annEdge=annText:FindFirstChildOfClass("UIStroke")
  if annEdge then
@@ -180,12 +182,24 @@ local function showAnnouncement(data)
  local cam=workspace.CurrentCamera
  local viewportW=cam and cam.ViewportSize.X or 1280
  local maxW=math.clamp(math.floor(viewportW*.62),440,760)
- local textW=math.max(220,maxW-annText.Position.X.Offset-22)
+ local minW=420
+ local left=annText.Position.X.Offset
+ local right=14
+ local topPad=8
+ local bottomPad=8
+
  local plain=titleText.."\n"..nick..": "..body
- local bounds=TextService:GetTextSize(plain,annText.TextSize,annText.Font,Vector2.new(textW,180))
- local w=math.clamp(math.ceil(bounds.X)+annText.Position.X.Offset+22,440,maxW)
- local h=math.clamp(math.max(math.ceil(bounds.Y)+16,annAvatar.Size.Y.Offset+12),58,104)
- annText.Size=UDim2.new(1,-annText.Position.X.Offset-14,1,-10)
+ local oneLine=TextService:GetTextSize(plain,annText.TextSize,annText.Font,Vector2.new(4000,4000))
+ local w=math.clamp(math.ceil(oneLine.X)+left+right,minW,maxW)
+ local textW=math.max(220,w-left-right)
+
+ annText.Size=UDim2.fromOffset(textW,200)
+ Run.Heartbeat:Wait()
+ local textH=math.max(annText.TextBounds.Y,annText.TextSize*2)
+ local h=math.max(math.ceil(textH)+topPad+bottomPad,annAvatar.Size.Y.Offset+12)
+
+ annText.Size=UDim2.fromOffset(textW,math.ceil(textH))
+ annText.Position=UDim2.fromOffset(left,topPad)
  annRow.Size=UDim2.fromOffset(w,h)
 
  local fit=1
@@ -293,7 +307,7 @@ function M.start()
  if pageServer then
   local announce=Instance.new("Frame")
   announce.Name="ServerAnnouncement"
-  announce.Size=UDim2.new(1,-8,0,84)
+  announce.Size=UDim2.new(1,-8,0,102)
   announce.Position=UDim2.fromOffset(4,4)
   announce.BackgroundColor3=rgb(25,28,38)
   announce.BorderSizePixel=0
@@ -348,10 +362,14 @@ function M.start()
   local box=Instance.new("TextBox")
   box.Name="Message"
   box.Position=UDim2.fromOffset(10,38)
-  box.Size=UDim2.new(1,-104,0,27)
+  box.Size=UDim2.new(1,-104,0,43)
   box.BackgroundColor3=rgb(14,16,23)
   box.BorderSizePixel=0
   box.ClearTextOnFocus=false
+  box.MultiLine=true
+  box.TextWrapped=true
+  box.TextTruncate=Enum.TextTruncate.None
+  box.ClipsDescendants=true
   box.PlaceholderText="Message..."
   box.Text=""
   box.TextColor3=Color3.new(1,1,1)
@@ -359,6 +377,7 @@ function M.start()
   box.Font=Enum.Font.Gotham
   box.TextSize=11
   box.TextXAlignment=Enum.TextXAlignment.Left
+  box.TextYAlignment=Enum.TextYAlignment.Top
   box.ZIndex=21
   box.Parent=announce
   local boxCorner=Instance.new("UICorner")
@@ -374,7 +393,7 @@ function M.start()
   sendButton.Name="Send"
   sendButton.AnchorPoint=Vector2.new(1,0)
   sendButton.Position=UDim2.new(1,-10,0,38)
-  sendButton.Size=UDim2.fromOffset(84,27)
+  sendButton.Size=UDim2.fromOffset(84,43)
   sendButton.BackgroundColor3=rgb(255,138,0)
   sendButton.BorderSizePixel=0
   sendButton.AutoButtonColor=false
@@ -399,7 +418,7 @@ function M.start()
   local counter=Instance.new("TextLabel")
   counter.Name="Counter"
   counter.BackgroundTransparency=1
-  counter.Position=UDim2.fromOffset(10,67)
+  counter.Position=UDim2.fromOffset(10,84)
   counter.Size=UDim2.fromOffset(70,12)
   counter.Font=Enum.Font.Gotham
   counter.TextSize=8
@@ -413,7 +432,7 @@ function M.start()
   status.Name="Status"
   status.BackgroundTransparency=1
   status.AnchorPoint=Vector2.new(1,0)
-  status.Position=UDim2.new(1,-10,0,67)
+  status.Position=UDim2.new(1,-10,0,84)
   status.Size=UDim2.fromOffset(180,12)
   status.Font=Enum.Font.GothamBold
   status.TextSize=8
@@ -439,11 +458,11 @@ function M.start()
 
   for _,child in pageServer:GetChildren() do
    if child~=announce and child:IsA("GuiObject") then
-    child.Position=child.Position+UDim2.fromOffset(0,90)
+    child.Position=child.Position+UDim2.fromOffset(0,108)
    end
   end
   if pageServer:IsA("ScrollingFrame") then
-   pageServer.CanvasSize=pageServer.CanvasSize+UDim2.fromOffset(0,90)
+   pageServer.CanvasSize=pageServer.CanvasSize+UDim2.fromOffset(0,108)
   end
 
   local statusToken=0
@@ -468,8 +487,12 @@ function M.start()
    setStatus(isFrench and "ENVOYÉ ✓" or "SENT ✓",rgb(130,255,145))
   end
   sendButton.Activated:Connect(submitAnnouncement)
-  box.FocusLost:Connect(function(enterPressed)
-   if enterPressed then submitAnnouncement() end
+  UIS.InputBegan:Connect(function(input,processed)
+   if processed or not box:IsFocused() then return end
+   if input.KeyCode==Enum.KeyCode.Return and (UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl)) then
+    box:ReleaseFocus()
+    submitAnnouncement()
+   end
   end)
  end
  local pagePlayer=pages.PLAYER
