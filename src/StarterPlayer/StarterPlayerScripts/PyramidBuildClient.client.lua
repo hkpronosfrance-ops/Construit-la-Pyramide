@@ -174,7 +174,8 @@ RunService.Heartbeat:Connect(function(dt)
 	end
 end)
 
-local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidBuild")
+local gui = player:WaitForChild("PlayerGui"):WaitForChild("PyramidBuild", 30)
+if not gui then return end
 local msg = gui:WaitForChild("Message")
 local banner = gui:WaitForChild("Complete")
 local coinTemplate = gui:WaitForChild("CoinPopupTemplate")
