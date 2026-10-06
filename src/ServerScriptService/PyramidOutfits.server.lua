@@ -107,12 +107,8 @@ local function getAdminAuraTemplate()
 end
 
 local function removeAdminAuraAsset(character)
-	local old = character:FindFirstChild("AdminAuraAsset")
-	if old then
-		old:Destroy()
-	end
-	for _, o in character:GetChildren() do
-		if o:IsA("Accessory") and o:GetAttribute("AdminAuraAsset") == true then
+	for _, o in character:GetDescendants() do
+		if o.Name == "AdminAuraAsset" or (o:IsA("Accessory") and o:GetAttribute("AdminAuraAsset") == true) then
 			o:Destroy()
 		end
 	end
