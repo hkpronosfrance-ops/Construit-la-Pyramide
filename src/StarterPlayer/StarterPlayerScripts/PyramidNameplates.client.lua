@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local folder = RS:WaitForChild("PyramidHUD")
@@ -32,6 +33,47 @@ local function build(p, head)
 	local rank = bb:WaitForChild("Rank")
 	local rankInk = rank:FindFirstChildOfClass("UIStroke") or Instance.new("UIStroke", rank)
 	local gradient = rank:FindFirstChildOfClass("UIGradient") or Instance.new("UIGradient", rank)
+	local rankScale = rank:FindFirstChildOfClass("UIScale") or Instance.new("UIScale", rank)
+	local normalStrokeThickness = rankInk.Thickness
+	local pulseTween
+	local shineTween
+	local adminFxOn = false
+
+	local function setAdminFx(on)
+		if on == adminFxOn then
+			return
+		end
+		adminFxOn = on
+
+		if pulseTween then
+			pulseTween:Cancel()
+			pulseTween = nil
+		end
+		if shineTween then
+			shineTween:Cancel()
+			shineTween = nil
+		end
+
+		rankScale.Scale = 1
+		gradient.Offset = Vector2.new(0, 0)
+		rankInk.Thickness = normalStrokeThickness
+
+		if on then
+			rankInk.Thickness = math.max(normalStrokeThickness, 2.4)
+			pulseTween = TweenService:Create(
+				rankScale,
+				TweenInfo.new(1.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+				{ Scale = 1.06 }
+			)
+			shineTween = TweenService:Create(
+				gradient,
+				TweenInfo.new(1.7, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true),
+				{ Offset = Vector2.new(0.28, 0) }
+			)
+			pulseTween:Play()
+			shineTween:Play()
+		end
+	end
 	local name = bb:WaitForChild("PlayerName")
 	name.Text = p.DisplayName
 	bb.Enabled = true
@@ -49,9 +91,11 @@ local function build(p, head)
 
 		local style
 		if p:GetAttribute("IsAdmin") == true then
-			rank.Text = "ADMIN"
+			rank.Text = "👑 ADMIN"
 			style = R.AdminStyle
+			setAdminFx(true)
 		else
+			setAdminFx(false)
 			local index = R.index(pyramids)
 			rank.Text = R.Ranks[index][1]
 			style = R.style(index)
@@ -67,12 +111,13 @@ local function build(p, head)
 		p:GetAttributeChangedSignal(C.Stats.Pyramids):Connect(paint),
 		p:GetAttributeChangedSignal("IsAdmin"):Connect(paint),
 	}
-	return { gui = bb, connections = connections }
+	return { gui = bb, connections = connections, stopFx = function() setAdminFx(false) end }
 end
 
 local function drop(p)
 	local plate = plates[p]
 	if plate then
+		if plate.stopFx then plate.stopFx() end
 		for _, connection in plate.connections or {} do
 			connection:Disconnect()
 		end
