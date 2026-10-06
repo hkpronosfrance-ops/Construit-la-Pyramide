@@ -54,6 +54,16 @@ R.Ranks = {
 }
 
 local rgb = Color3.fromRGB
+R.AdminStyle = {
+	Colors = {
+		rgb(255, 224, 82),
+		rgb(255, 126, 32),
+		rgb(255, 70, 70),
+	},
+	Ink = rgb(74, 24, 8),
+	Horizontal = true,
+}
+
 R.Groups = {
 	{ Colors = { rgb(255, 240, 200), rgb(222, 178, 108) }, Ink = rgb(70, 44, 16) },
 	{ Colors = { rgb(190, 255, 120), rgb(40, 200, 70) }, Ink = rgb(12, 60, 20) },
