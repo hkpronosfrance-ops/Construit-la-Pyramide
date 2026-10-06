@@ -5,6 +5,7 @@ local Run = game:GetService("RunService")
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local T = C.Training
+local ServerBoosts = require(script.Parent:WaitForChild("PyramidServerBoosts"))
 local remote = folder:FindFirstChild("Training") or Instance.new("RemoteEvent")
 remote.Name = "Training"
 remote.Parent = folder
@@ -66,7 +67,9 @@ local function multiplier(p, zone)
 end
 
 local function gain(p, zone, stat, base, boostAttr, quiet)
+	local serverKind = stat == C.Stats.Speed and "speed" or "strength"
 	local amount = base * multiplier(p, zone) * (p:GetAttribute(boostAttr) or 1)
+		* ServerBoosts.Get(serverKind)
 		* (1 + (p:GetAttribute(C.Stats.FriendBoost) or 0) / 100)
 	amount = math.max(1, math.floor(amount + 0.5))
 	p:SetAttribute(stat, (p:GetAttribute(stat) or 0) + amount)
