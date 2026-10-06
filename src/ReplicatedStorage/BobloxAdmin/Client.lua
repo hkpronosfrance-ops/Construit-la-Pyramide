@@ -249,7 +249,7 @@ function M.start()
   box.BackgroundColor3=rgb(20,23,32)
   box.BorderSizePixel=0
   box.ClearTextOnFocus=false
-  box.PlaceholderText="Message to everyone in this server..."
+  box.PlaceholderText="Message..."
   box.Text=""
   box.TextColor3=Color3.new(1,1,1)
   box.PlaceholderColor3=rgb(145,150,165)
