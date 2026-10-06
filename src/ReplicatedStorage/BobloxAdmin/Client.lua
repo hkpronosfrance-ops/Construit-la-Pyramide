@@ -208,6 +208,100 @@ function M.start()
    pageWithLog[page]=logBox.Position.Y.Offset-LOG_GAP-top
   end
  end
+ local pageServer=pages.SERVER
+ if pageServer then
+  local announce=Instance.new("Frame")
+  announce.Name="ServerAnnouncement"
+  announce.Size=UDim2.new(1,-8,0,48)
+  announce.Position=UDim2.fromOffset(4,4)
+  announce.BackgroundColor3=rgb(36,40,52)
+  announce.BorderSizePixel=0
+  announce.ZIndex=20
+  announce.Parent=pageServer
+
+  local corner=Instance.new("UICorner")
+  corner.CornerRadius=UDim.new(0,6)
+  corner.Parent=announce
+
+  local edge=Instance.new("UIStroke")
+  edge.Color=rgb(255,184,34)
+  edge.Thickness=2
+  edge.Transparency=.15
+  edge.Parent=announce
+
+  local label=Instance.new("TextLabel")
+  label.Name="Title"
+  label.BackgroundTransparency=1
+  label.Position=UDim2.fromOffset(8,2)
+  label.Size=UDim2.new(1,-16,0,14)
+  label.Font=Enum.Font.GothamBold
+  label.TextSize=11
+  label.TextXAlignment=Enum.TextXAlignment.Left
+  label.TextColor3=YELLOW
+  label.Text="SERVER ANNOUNCEMENT"
+  label.ZIndex=21
+  label.Parent=announce
+
+  local box=Instance.new("TextBox")
+  box.Name="Message"
+  box.Position=UDim2.fromOffset(8,19)
+  box.Size=UDim2.new(1,-92,0,23)
+  box.BackgroundColor3=rgb(20,23,32)
+  box.BorderSizePixel=0
+  box.ClearTextOnFocus=false
+  box.PlaceholderText="Message..."
+  box.Text=""
+  box.TextColor3=Color3.new(1,1,1)
+  box.PlaceholderColor3=rgb(145,150,165)
+  box.Font=Enum.Font.Gotham
+  box.TextSize=11
+  box.TextXAlignment=Enum.TextXAlignment.Left
+  box.ZIndex=21
+  box.Parent=announce
+  local boxCorner=Instance.new("UICorner")
+  boxCorner.CornerRadius=UDim.new(0,4)
+  boxCorner.Parent=box
+
+  local sendButton=Instance.new("TextButton")
+  sendButton.Name="Send"
+  sendButton.AnchorPoint=Vector2.new(1,0)
+  sendButton.Position=UDim2.new(1,-8,0,19)
+  sendButton.Size=UDim2.fromOffset(76,23)
+  sendButton.BackgroundColor3=rgb(255,138,0)
+  sendButton.BorderSizePixel=0
+  sendButton.Text="SEND"
+  sendButton.TextColor3=Color3.new(1,1,1)
+  sendButton.Font=Enum.Font.GothamBold
+  sendButton.TextSize=11
+  sendButton.ZIndex=21
+  sendButton.Parent=announce
+  local sendCorner=Instance.new("UICorner")
+  sendCorner.CornerRadius=UDim.new(0,4)
+  sendCorner.Parent=sendButton
+  T.gradient(sendButton,rgb(255,138,0))
+
+  for _,child in pageServer:GetChildren() do
+   if child~=announce and child:IsA("GuiObject") then
+    child.Position=child.Position+UDim2.fromOffset(0,54)
+   end
+  end
+  if pageServer:IsA("ScrollingFrame") then
+   pageServer.CanvasSize=pageServer.CanvasSize+UDim2.fromOffset(0,54)
+  end
+
+  local function submitAnnouncement()
+   local message=(box.Text or ""):match("^%s*(.-)%s*$")
+   if message=="" then log("Enter a server message first.",WARN) return end
+   if #message>180 then log("Server message must be 180 characters or fewer.",WARN) return end
+   send(PREFIX.." announce "..message)
+   box.Text=""
+  end
+  sendButton.Activated:Connect(submitAnnouncement)
+  box.FocusLost:Connect(function(enterPressed)
+   if enterPressed then submitAnnouncement() end
+  end)
+ end
+
  local pagePlayer=pages.PLAYER
  selectedLabel=pagePlayer:WaitForChild("SelectedLabel")
  selectedLabel.Text=attrOr(selectedLabel,"EmptyText","nobody selected")
