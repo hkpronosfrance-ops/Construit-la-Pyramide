@@ -1,0 +1,3 @@
+# Roblox place files are binary. Track the active place in Git, but do not diff it as text.
+*.rbxl binary
+*.rbxlx text
