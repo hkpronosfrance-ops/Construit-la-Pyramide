@@ -1,9 +1,7 @@
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
-local AssetService = game:GetService("AssetService")
 
 local OWNER_USER_ID = 10027646422
-local ADMIN_AURA_ASSET_ID = 10584464506
 local KILT = "rbxassetid://129892047801968"
 local PHARAOH = {
 	Hat = "18482412",
@@ -79,101 +77,6 @@ local function adminHighlight(character, on)
 	h.Parent = character
 end
 
-local adminAuraTemplate
-local adminAuraLoadAttempted = false
-
-local function getAdminAuraTemplate()
-	if adminAuraLoadAttempted then
-		return adminAuraTemplate
-	end
-	adminAuraLoadAttempted = true
-
-	local ok, loaded = pcall(function()
-		return AssetService:LoadAssetAsync(ADMIN_AURA_ASSET_ID)
-	end)
-	if not ok or not loaded then
-		warn("[PyramidOutfits] could not load admin aura asset " .. tostring(ADMIN_AURA_ASSET_ID) .. ": " .. tostring(loaded))
-		return nil
-	end
-
-	for _, o in loaded:GetDescendants() do
-		if o:IsA("Script") or o:IsA("LocalScript") or o:IsA("ModuleScript") then
-			o:Destroy()
-		end
-	end
-
-	adminAuraTemplate = loaded
-	return adminAuraTemplate
-end
-
-local function removeAdminAuraAsset(character)
-	for _, o in character:GetDescendants() do
-		if o.Name == "AdminAuraAsset" or (o:IsA("Accessory") and o:GetAttribute("AdminAuraAsset") == true) then
-			o:Destroy()
-		end
-	end
-end
-
-local function attachAdminAuraAsset(character, humanoid, hrp)
-	removeAdminAuraAsset(character)
-
-	local templateAsset = getAdminAuraTemplate()
-	if not templateAsset then
-		return
-	end
-
-	local clone = templateAsset:Clone()
-	clone.Name = "AdminAuraAsset"
-
-	local accessories = {}
-	for _, o in clone:GetDescendants() do
-		if o:IsA("Accessory") then
-			table.insert(accessories, o)
-		end
-	end
-	for _, accessory in accessories do
-		accessory.Parent = nil
-		accessory:SetAttribute("AdminAuraAsset", true)
-		humanoid:AddAccessory(accessory)
-	end
-
-	local hasParts = false
-	for _, o in clone:GetDescendants() do
-		if o:IsA("BasePart") then
-			hasParts = true
-			o.Anchored = false
-			o.CanCollide = false
-			o.CanTouch = false
-			o.CanQuery = false
-			o.Massless = true
-		end
-	end
-
-	if hasParts then
-		clone.Parent = character
-		clone:PivotTo(hrp.CFrame)
-		for _, part in clone:GetDescendants() do
-			if part:IsA("BasePart") then
-				local weld = Instance.new("WeldConstraint")
-				weld.Name = "AdminAuraWeld"
-				weld.Part0 = hrp
-				weld.Part1 = part
-				weld.Parent = part
-			end
-		end
-	else
-		local attachment = Instance.new("Attachment")
-		attachment.Name = "AdminAuraAsset"
-		attachment.Parent = hrp
-		for _, o in clone:GetDescendants() do
-			if o:IsA("ParticleEmitter") or o:IsA("Beam") or o:IsA("Trail") then
-				o.Parent = attachment
-			end
-		end
-		clone:Destroy()
-	end
-end
-
 local dressing = {}
 local function dress(p)
 	local ch = p.Character
@@ -244,14 +147,12 @@ local function dress(p)
 		if isOwner then
 			aura(hrp, "admin")
 			adminHighlight(ch, true)
-			attachAdminAuraAsset(ch, hum, hrp)
 		elseif pharaoh then
 			aura(hrp, "pharaoh")
 			adminHighlight(ch, false)
 		else
 			aura(hrp, nil)
 			adminHighlight(ch, false)
-			removeAdminAuraAsset(ch)
 		end
 	end
 	dressing[ch] = nil
