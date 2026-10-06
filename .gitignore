@@ -9,3 +9,6 @@
 Thumbs.db
 .vscode/
 .idea/
+
+# Never version the factory backup
+place/buildapiramid_FACTORY_BACKUP.rbxl
