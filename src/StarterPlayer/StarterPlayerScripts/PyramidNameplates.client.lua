@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local OWNER_USER_ID = 10027646422
@@ -41,7 +42,17 @@ local function build(p, head)
 	local normalTextColor = rank.TextColor3
 	local pulseTween
 	local shineTween
+	local adminRainbowConnection
 	local adminFxOn = false
+
+	local function rainbow(g)
+		local h0 = (os.clock() * 0.35) % 1
+		local keys = {}
+		for i = 0, 6 do
+			keys[i + 1] = ColorSequenceKeypoint.new(i / 6, Color3.fromHSV((h0 + i * 0.12) % 1, 0.7, 1))
+		end
+		g.Color = ColorSequence.new(keys)
+	end
 
 	local function setAdminFx(on)
 		if on == adminFxOn then
@@ -57,6 +68,10 @@ local function build(p, head)
 			shineTween:Cancel()
 			shineTween = nil
 		end
+		if adminRainbowConnection then
+			adminRainbowConnection:Disconnect()
+			adminRainbowConnection = nil
+		end
 
 		rankScale.Scale = 1
 		gradient.Offset = Vector2.new(0, 0)
@@ -65,22 +80,24 @@ local function build(p, head)
 		rank.TextColor3 = normalTextColor
 
 		if on then
-			rank.TextColor3 = Color3.fromRGB(235, 35, 35)
+			-- Match the animated rainbow used by the +50,000 pyramid-fill button.
+			rank.TextColor3 = Color3.new(1, 1, 1)
 			rankInk.Color = Color3.fromRGB(0, 0, 0)
 			rankInk.Thickness = math.max(normalStrokeThickness, 3.2)
 			rankInk.Transparency = 0
-			gradient.Enabled = false
-
-			pulseTween = TweenService:Create(
-				rankScale,
-				TweenInfo.new(1.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-				{ Scale = 1.06 }
-			)
-			pulseTween:Play()
+			gradient.Enabled = true
+			gradient.Rotation = 0
+			rainbow(gradient)
+			adminRainbowConnection = RunService.RenderStepped:Connect(function()
+				if adminFxOn and rank.Parent then
+					rainbow(gradient)
+				end
+			end)
 		else
 			gradient.Enabled = true
 		end
 	end
+
 	local name = bb:WaitForChild("PlayerName")
 	name.Text = p.DisplayName
 	bb.Enabled = true
