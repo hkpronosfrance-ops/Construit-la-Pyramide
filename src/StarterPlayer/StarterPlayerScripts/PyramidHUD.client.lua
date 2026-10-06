@@ -102,9 +102,11 @@ local function translateFrench(text)
 		return "+" .. range .. "% portée de placement"
 	end
 
-	local coins = text:match("^%+([%d,]+) Coins!$")
+	local coins, bang = text:match("^%+([%d,]+) Coins(!?)$")
 	if coins then
-		return "+" .. coins:gsub(",", " ") .. " pièces !"
+		local numeric = tonumber((coins:gsub(",", ""))) or 0
+		local unit = numeric == 1 and " pièce" or " pièces"
+		return "+" .. coins:gsub(",", " ") .. unit .. (bang == "!" and " !" or "")
 	end
 
 	local blockAmount, blockPlural = text:match("^%+([%d,]+) Block(s?)$")
