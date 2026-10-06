@@ -60,6 +60,13 @@ panel.Name = "DiscordPanel"
 panel.Visible = false
 panel.Parent = gui
 
+-- IMPORTANT: wire the clone through the exact same Theme adoption path as
+-- PyramidGroupRewards. The original window contains styled Caption/BtnFill
+-- descendants; adopting before changing Text keeps those visible descendants
+-- synchronized and preserves the real Free Rewards rendering instead of only
+-- changing the invisible TextButton.Text values.
+T.adoptWindow(panel)
+
 local header = panel:WaitForChild("Header")
 local close = header:WaitForChild("Close")
 local likeBtn = panel:WaitForChild("Like")
@@ -69,15 +76,11 @@ local hint = panel:WaitForChild("Hint")
 local prize = panel:WaitForChild("Prize")
 local amount = prize:WaitForChild("Amount")
 
--- Header title: find the main text object and change only its content,
--- preserving the original Free Rewards styling exactly.
-for _, obj in header:GetDescendants() do
-	if (obj:IsA("TextLabel") or obj:IsA("TextButton")) and obj ~= close then
-		local text = string.lower(obj.Text or "")
-		if text:find("reward") or text:find("récomp") or text:find("free") then
-			obj.Text = "Discord"
-		end
-	end
+-- Change only the content of the real Free Rewards controls. Their geometry,
+-- gradients, strokes, textures, shadows and typography remain untouched.
+local title = header:FindFirstChild("Title")
+if title and title:IsA("TextLabel") then
+	title.Text = "Discord"
 end
 
 likeBtn.Text = isFrench and "Rejoins notre Discord !" or "Join our Discord!"
@@ -87,6 +90,15 @@ hint.Text = isFrench
 	and "Retrouve le serveur officiel dans les liens sociaux de la page Roblox du jeu."
 	or "Find the official server in the Roblox game page social links."
 claim.Text = isFrench and "COMPRIS" or "GOT IT"
+
+-- Match the original Free Rewards "Locked" state for the bottom button.
+-- T.adoptWindow above wires BtnFill to this gradient, so the visible skinned
+-- layers receive the exact same grey palette as PyramidGroupRewards.
+local lockedColor = claim:GetAttribute("LockedColor")
+if typeof(lockedColor) ~= "Color3" then
+	lockedColor = rgb(104, 122, 152)
+end
+T.gradient(claim, lockedColor)
 
 -- Keep the exact Free Rewards layout, only remove reward-specific imagery/text
 -- that would otherwise imply coins or a claimable reward.
