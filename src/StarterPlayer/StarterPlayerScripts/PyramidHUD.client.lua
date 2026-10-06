@@ -131,6 +131,7 @@ local FR_EXACT = {
 	["DAY"] = "JOUR",
 	["NIGHT"] = "NUIT",
 	["ADMIN"] = "ADMINISTRATEUR",
+	["👑 ADMIN"] = "👑 ADMINISTRATEUR",
 	["Pharaoh"] = "Pharaon",
 	["2x Pyramids · Insta-Pickup · Insta-Place"] = "2x Pyramides · Récupération Rapide · Placement rapide",
 	["SAND SWEEPER"] = "BALAYEUR DE SABLE",
