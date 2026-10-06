@@ -6,25 +6,12 @@ local LocalizationService = game:GetService("LocalizationService")
 local player = Players.LocalPlayer
 local pg = player:WaitForChild("PlayerGui")
 local state = RS:WaitForChild("PyramidHUD")
-local C = require(state:WaitForChild("Config"))
+local Tile = require(state:WaitForChild("TileStyle"))
 
 local hud = pg:WaitForChild("PyramidHUD", 30)
-if not hud then
-	return
-end
-
+if not hud then return end
 local stats = hud:WaitForChild("Stats", 15)
-local boosts = hud:WaitForChild("Boosts", 15)
-if not (stats and boosts) then
-	return
-end
-
-local speedTemplate = boosts:FindFirstChild("SpeedBoost")
-local strengthTemplate = boosts:FindFirstChild("StrengthBoost")
-if not (speedTemplate and strengthTemplate) then
-	warn("[ServerBoostTimer] Missing SpeedBoost/StrengthBoost templates.")
-	return
-end
+if not stats then return end
 
 local isFrench = RunService:IsStudio()
 if not isFrench then
@@ -37,48 +24,40 @@ end
 local rgb = Color3.fromRGB
 
 local defs = {
-	{
-		key = "Coins",
-		fr = "PIÈCES",
-		en = "COINS",
-		template = strengthTemplate,
-		rim = rgb(166, 108, 0),
-		top = rgb(255, 235, 82),
-		bottom = rgb(255, 147, 18),
-	},
-	{
-		key = "Speed",
-		fr = "VITESSE",
-		en = "SPEED",
-		template = speedTemplate,
-		rim = rgb(24, 86, 190),
-		top = rgb(150, 225, 255),
-		bottom = rgb(40, 140, 255),
-	},
-	{
-		key = "Strength",
-		fr = "FORCE",
-		en = "STRENGTH",
-		template = strengthTemplate,
-		rim = rgb(190, 84, 8),
-		top = rgb(255, 236, 110),
-		bottom = rgb(255, 140, 20),
-	},
-	{
-		key = "Pyramids",
-		fr = "PYRAMIDES",
-		en = "PYRAMIDS",
-		template = speedTemplate,
-		rim = rgb(105, 36, 182),
-		top = rgb(239, 143, 255),
-		bottom = rgb(146, 57, 255),
-	},
+	{ key = "Coins", fr = "PIÈCES", en = "COINS", rim = rgb(166,108,0), top = rgb(255,235,82), bottom = rgb(255,147,18) },
+	{ key = "Speed", fr = "VITESSE", en = "SPEED", rim = rgb(24,86,190), top = rgb(150,225,255), bottom = rgb(40,140,255) },
+	{ key = "Strength", fr = "FORCE", en = "STRENGTH", rim = rgb(190,84,8), top = rgb(255,236,110), bottom = rgb(255,140,20) },
+	{ key = "Pyramids", fr = "PYRAMIDES", en = "PYRAMIDS", rim = rgb(105,36,182), top = rgb(239,143,255), bottom = rgb(146,57,255) },
 }
 
-local old = pg:FindFirstChild("ServerBoostTimer")
-if old then
-	old:Destroy()
+local function findIconImage(key)
+	local row = stats:FindFirstChild(key)
+	if not row then return "" end
+	local best, score
+	for _, obj in row:GetDescendants() do
+		if obj:IsA("ImageLabel") and obj.Image ~= "" then
+			local bad = false
+			local p = obj.Parent
+			while p and p ~= row do
+				if p.Name == "SpeedEditIcon" then bad = true break end
+				p = p.Parent
+			end
+			if not bad then
+				local s = math.max(obj.AbsoluteSize.X * obj.AbsoluteSize.Y, obj.Size.X.Offset * obj.Size.Y.Offset)
+				if obj.Name:lower():find("icon",1,true) then s += 100000 end
+				if not best or s > score then best, score = obj, s end
+			end
+		end
+	end
+	return best and best.Image or ""
 end
+
+for _, def in defs do
+	def.icon = findIconImage(def.key)
+end
+
+local old = pg:FindFirstChild("ServerBoostTimer")
+if old then old:Destroy() end
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "ServerBoostTimer"
@@ -89,221 +68,150 @@ gui.Parent = pg
 
 local holder = Instance.new("Frame")
 holder.Name = "Holder"
-holder.AnchorPoint = Vector2.new(1, 1)
-holder.Position = UDim2.new(1, -15, 1, -145)
-holder.Size = UDim2.fromOffset(246, 106)
+holder.AnchorPoint = Vector2.new(1,1)
+holder.Position = UDim2.new(1,-14,1,-145)
+holder.Size = UDim2.fromOffset(238,102)
 holder.BackgroundTransparency = 1
 holder.Visible = false
 holder.Parent = gui
 
 local rootScale = Instance.new("UIScale")
 rootScale.Parent = holder
-
 local function resize()
 	local cam = workspace.CurrentCamera
-	if not cam then
-		return
-	end
+	if not cam then return end
 	local v = cam.ViewportSize
-	rootScale.Scale = math.clamp(math.min(v.X / 1500, v.Y / 860), 0.65, 1)
+	rootScale.Scale = math.clamp(math.min(v.X/1500,v.Y/860),0.68,1)
 end
 resize()
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize)
 
 local grid = Instance.new("UIGridLayout")
-grid.CellSize = UDim2.fromOffset(118, 48)
-grid.CellPadding = UDim2.fromOffset(6, 6)
+grid.CellSize = UDim2.fromOffset(116,48)
+grid.CellPadding = UDim2.fromOffset(6,6)
 grid.FillDirectionMaxCells = 2
 grid.HorizontalAlignment = Enum.HorizontalAlignment.Right
 grid.VerticalAlignment = Enum.VerticalAlignment.Bottom
 grid.SortOrder = Enum.SortOrder.LayoutOrder
 grid.Parent = holder
 
-local function statIconImage(key)
-	local row = stats:FindFirstChild(key)
-	if not row then
-		return nil
-	end
-	local best, score
-	for _, obj in row:GetDescendants() do
-		if obj:IsA("ImageLabel") and not obj:IsDescendantOf(row:FindFirstChild("SpeedEditIcon") or Instance.new("Folder")) then
-			local area = math.max(obj.AbsoluteSize.X * obj.AbsoluteSize.Y, obj.Size.X.Offset * obj.Size.Y.Offset)
-			if obj.Name:lower():find("icon", 1, true) then
-				area += 100000
-			end
-			if not best or area > score then
-				best, score = obj, area
-			end
-		end
-	end
-	return best and best.Image or nil
-end
-
-local function recolor(clone, def)
-	for _, obj in clone:GetDescendants() do
-		if obj:IsA("UIStroke") then
-			obj.Color = def.rim
-		elseif obj:IsA("UIGradient") then
-			obj.Color = ColorSequence.new({
-				ColorSequenceKeypoint.new(0, def.top),
-				ColorSequenceKeypoint.new(1, def.bottom),
-			})
-		end
-	end
-end
-
-local function replaceBoostIcon(clone, image)
-	if not image or image == "" then
-		return
-	end
-	for _, obj in clone:GetDescendants() do
-		if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
-			local current = obj.Image
-			if current == C.Icons.Speed or current == C.Icons.Strength then
-				obj.Image = image
-			end
-		end
-	end
-end
-
-local function setMainText(clone, text)
-	local changed = false
-	for _, obj in clone:GetDescendants() do
-		if obj:IsA("TextLabel") or obj:IsA("TextButton") then
-			local value = (obj.Text or ""):lower()
-			if value:find("speed", 1, true)
-				or value:find("vitesse", 1, true)
-				or value:find("strength", 1, true)
-				or value:find("force", 1, true)
-			then
-				obj.Text = text
-				changed = true
-			end
-		end
-	end
-	if not changed then
-		local face = clone:FindFirstChild("Face", true)
-		local caption = face and face:FindFirstChild("Caption", true)
-		if caption and caption:IsA("TextLabel") then
-			caption.Text = text
-		end
-	end
-end
-
-local function setTimerText(clone, text)
-	local price = clone:FindFirstChild("Price", true)
-	local label = price and price:FindFirstChild("Text", true)
-	if label and label:IsA("TextLabel") then
-		label.Text = text
-		label.TextColor3 = rgb(104, 255, 119)
-		label.TextStrokeColor3 = rgb(10, 40, 13)
-		label.TextStrokeTransparency = 0.2
-		return label
-	end
-	return nil
-end
-
 local cards = {}
 
 local function makeCard(def, order)
-	local shell = Instance.new("Frame")
-	shell.Name = def.key
-	shell.LayoutOrder = order
-	shell.Size = UDim2.fromOffset(118, 48)
-	shell.BackgroundTransparency = 1
-	shell.ClipsDescendants = true
-	shell.Visible = false
-	shell.Parent = holder
+	local card = Instance.new("Frame")
+	card.Name = def.key
+	card.LayoutOrder = order
+	card.Size = UDim2.fromOffset(116,48)
+	card.BackgroundTransparency = 1
+	card.Visible = false
+	card.Parent = holder
 
-	local clone = def.template:Clone()
-	clone.Name = "ExactBoost"
-	clone.AnchorPoint = Vector2.new(0.5, 0.5)
-	clone.Position = UDim2.fromScale(0.5, 0.5)
-	clone.Visible = true
-	clone.Parent = shell
+	local _,_,fill = Tile.paint(card, def.rim, def.top, def.bottom)
 
-	for _, obj in clone:GetDescendants() do
-		if obj:IsA("GuiButton") then
-			obj.Active = false
-			obj.Selectable = false
-			obj.AutoButtonColor = false
-		end
-	end
+	local icon = Instance.new("ImageLabel")
+	icon.Name = "Icon"
+	icon.BackgroundTransparency = 1
+	icon.Image = def.icon
+	icon.ScaleType = Enum.ScaleType.Fit
+	icon.AnchorPoint = Vector2.new(0.5,0.5)
+	icon.Position = UDim2.new(0,24,0.5,0)
+	icon.Size = UDim2.fromOffset(36,36)
+	icon.ZIndex = 6
+	icon.Parent = fill
 
-	local sourceSize = def.template.AbsoluteSize
-	local sourceW = math.max(sourceSize.X, def.template.Size.X.Offset, 1)
-	local sourceH = math.max(sourceSize.Y, def.template.Size.Y.Offset, 1)
-	local fit = math.min(118 / sourceW, 48 / sourceH)
-	local sc = Instance.new("UIScale")
-	sc.Scale = fit
-	sc.Parent = clone
+	local title = Instance.new("TextLabel")
+	title.Name = "Title"
+	title.BackgroundTransparency = 1
+	title.Position = UDim2.fromOffset(44,5)
+	title.Size = UDim2.fromOffset(65,20)
+	title.Font = Enum.Font.FredokaOne
+	title.TextScaled = true
+	title.TextColor3 = Color3.new(1,1,1)
+	title.TextStrokeColor3 = Tile.Ink
+	title.TextStrokeTransparency = 0
+	title.TextXAlignment = Enum.TextXAlignment.Center
+	title.ZIndex = 7
+	title.Parent = fill
+	local limit = Instance.new("UITextSizeConstraint")
+	limit.MaxTextSize = 16
+	limit.MinTextSize = 8
+	limit.Parent = title
 
-	recolor(clone, def)
-	replaceBoostIcon(clone, statIconImage(def.key))
+	local timerBack = Instance.new("Frame")
+	timerBack.Name = "TimerBack"
+	timerBack.AnchorPoint = Vector2.new(0.5,0)
+	timerBack.Position = UDim2.new(0,77,0,27)
+	timerBack.Size = UDim2.fromOffset(58,15)
+	timerBack.BackgroundColor3 = rgb(15,56,24)
+	timerBack.BackgroundTransparency = 0.08
+	timerBack.BorderSizePixel = 0
+	timerBack.ZIndex = 7
+	timerBack.Parent = fill
+	local tc = Instance.new("UICorner")
+	tc.CornerRadius = UDim.new(0,4)
+	tc.Parent = timerBack
+	local ts = Instance.new("UIStroke")
+	ts.Color = rgb(58,210,78)
+	ts.Thickness = 1
+	ts.Transparency = 0.15
+	ts.Parent = timerBack
 
-	local name = isFrench and def.fr or def.en
-	setMainText(clone, "2x " .. name)
-	local timer = setTimerText(clone, "09:59")
+	local timer = Instance.new("TextLabel")
+	timer.Name = "Timer"
+	timer.Size = UDim2.fromScale(1,1)
+	timer.BackgroundTransparency = 1
+	timer.Font = Enum.Font.GothamBlack
+	timer.TextSize = 8
+	timer.TextColor3 = rgb(110,255,125)
+	timer.TextStrokeColor3 = rgb(5,25,8)
+	timer.TextStrokeTransparency = 0.25
+	timer.ZIndex = 8
+	timer.Parent = timerBack
 
-	cards[def.key] = {
-		frame = shell,
-		clone = clone,
-		timer = timer,
-		name = name,
-	}
+	cards[def.key] = { frame = card, title = title, timer = timer, def = def }
 end
 
-for index, def in defs do
-	makeCard(def, index)
+for i, def in defs do makeCard(def,i) end
+
+local function fmtMult(v)
+	return string.format("%.2f",v):gsub("%.?0+$","")
 end
 
-local function formatMultiplier(value)
-	return string.format("%.2f", value):gsub("%.?0+$", "")
-end
-
-local function formatTime(seconds)
-	seconds = math.max(0, math.ceil(seconds))
-	local hours = math.floor(seconds / 3600)
-	local minutes = math.floor((seconds % 3600) / 60)
-	local secs = seconds % 60
-	if hours > 0 then
-		return string.format("%d:%02d:%02d", hours, minutes, secs)
-	end
-	return string.format("%02d:%02d", minutes, secs)
+local function fmtTime(seconds)
+	seconds = math.max(0,math.ceil(seconds))
+	local h = math.floor(seconds/3600)
+	local m = math.floor((seconds%3600)/60)
+	local s = seconds%60
+	if h > 0 then return string.format("%d:%02d:%02d",h,m,s) end
+	return string.format("%02d:%02d",m,s)
 end
 
 local function refresh()
 	local now = workspace:GetServerTimeNow()
 	local active = 0
-
 	for _, def in defs do
-		local multiplier = tonumber(state:GetAttribute("ServerBoost" .. def.key .. "Multiplier")) or 1
-		local endsAt = tonumber(state:GetAttribute("ServerBoost" .. def.key .. "End")) or 0
-		local remaining = endsAt - now
-		local on = multiplier > 1 and remaining > 0
-
+		local mult = tonumber(state:GetAttribute("ServerBoost"..def.key.."Multiplier")) or 1
+		local endsAt = tonumber(state:GetAttribute("ServerBoost"..def.key.."End")) or 0
+		local remain = endsAt-now
+		local on = mult > 1 and remain > 0
 		local card = cards[def.key]
 		card.frame.Visible = on
 		if on then
 			active += 1
-			setMainText(card.clone, formatMultiplier(multiplier) .. "x " .. card.name)
-			if card.timer then
-				card.timer.Text = formatTime(remaining)
-			end
+			card.title.Text = fmtMult(mult).."x "..(isFrench and def.fr or def.en)
+			card.timer.Text = fmtTime(remain)
 		end
 	end
-
 	holder.Visible = active > 0
 end
 
 for _, def in defs do
-	for _, suffix in { "Multiplier", "End" } do
-		state:GetAttributeChangedSignal("ServerBoost" .. def.key .. suffix):Connect(refresh)
+	for _, suffix in {"Multiplier","End"} do
+		state:GetAttributeChangedSignal("ServerBoost"..def.key..suffix):Connect(refresh)
 	end
 end
 
 refresh()
-
 task.spawn(function()
 	while gui.Parent do
 		refresh()
