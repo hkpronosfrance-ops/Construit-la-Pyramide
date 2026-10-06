@@ -22,6 +22,143 @@ local BLUE = rgb(88, 101, 242)
 local DARK = rgb(30, 33, 42)
 local WHITE = Color3.new(1, 1, 1)
 
+local DISCORD_BLURPLE = rgb(88, 101, 242)
+local DISCORD_BLURPLE_LIGHT = rgb(114, 137, 218)
+local DISCORD_BLURPLE_DARK = rgb(68, 78, 199)
+local DISCORD_SURFACE = rgb(49, 51, 56)
+local DISCORD_SURFACE_DARK = rgb(30, 31, 34)
+local DISCORD_CARD = rgb(64, 68, 75)
+
+local function gradientPair(obj, topColor, bottomColor, rotation)
+	local g = obj:FindFirstChildOfClass("UIGradient") or Instance.new("UIGradient")
+	g.Rotation = rotation or 90
+	g.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, topColor),
+		ColorSequenceKeypoint.new(1, bottomColor),
+	})
+	g.Parent = obj
+	return g
+end
+
+local function addRound(parent, radius)
+	local corner = parent:FindFirstChildOfClass("UICorner") or Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = parent
+end
+
+local function makeDiscordHeaderIcon(header)
+	local oldIcon = header:FindFirstChild("MenuIcon")
+	local oldShadow = header:FindFirstChild("MenuIconShadow")
+	if oldIcon and oldIcon:IsA("GuiObject") then oldIcon.Visible = false end
+	if oldShadow and oldShadow:IsA("GuiObject") then oldShadow.Visible = false end
+
+	local old = header:FindFirstChild("DiscordHeaderIcon")
+	if old then old:Destroy() end
+
+	local holder = Instance.new("Frame")
+	holder.Name = "DiscordHeaderIcon"
+	holder.BackgroundTransparency = 1
+	holder.AnchorPoint = Vector2.new(0, 0.5)
+	holder.Position = UDim2.new(0, -1, 0.5, 0)
+	holder.Size = UDim2.fromOffset(80, 66)
+	holder.ZIndex = header.ZIndex + 5
+	holder.Parent = header
+
+	local outline = Instance.new("Frame")
+	outline.Name = "Outline"
+	outline.AnchorPoint = Vector2.new(0.5, 0.5)
+	outline.Position = UDim2.fromScale(0.5, 0.52)
+	outline.Size = UDim2.fromScale(0.84, 0.70)
+	outline.BackgroundColor3 = rgb(20, 24, 45)
+	outline.BorderSizePixel = 0
+	outline.ZIndex = holder.ZIndex
+	outline.Parent = holder
+	addRound(outline, 18)
+
+	local body = Instance.new("Frame")
+	body.Name = "Body"
+	body.AnchorPoint = Vector2.new(0.5, 0.5)
+	body.Position = UDim2.fromScale(0.5, 0.48)
+	body.Size = UDim2.fromScale(0.76, 0.62)
+	body.BackgroundColor3 = DISCORD_BLURPLE_LIGHT
+	body.BorderSizePixel = 0
+	body.ZIndex = holder.ZIndex + 1
+	body.Parent = holder
+	addRound(body, 16)
+	gradientPair(body, rgb(126, 145, 255), DISCORD_BLURPLE, 90)
+
+	local function ear(x, rotation)
+		local e = Instance.new("Frame")
+		e.AnchorPoint = Vector2.new(0.5, 0.5)
+		e.Position = UDim2.fromScale(x, 0.24)
+		e.Size = UDim2.fromScale(0.18, 0.18)
+		e.BackgroundColor3 = DISCORD_BLURPLE_LIGHT
+		e.BorderSizePixel = 0
+		e.Rotation = rotation
+		e.ZIndex = holder.ZIndex + 1
+		e.Parent = holder
+		addRound(e, 6)
+	end
+	ear(0.28, -24)
+	ear(0.72, 24)
+
+	local function eye(x)
+		local e = Instance.new("Frame")
+		e.AnchorPoint = Vector2.new(0.5, 0.5)
+		e.Position = UDim2.fromScale(x, 0.49)
+		e.Size = UDim2.fromScale(0.12, 0.16)
+		e.BackgroundColor3 = rgb(35, 52, 143)
+		e.BorderSizePixel = 0
+		e.ZIndex = holder.ZIndex + 2
+		e.Parent = holder
+		addRound(e, 99)
+	end
+	eye(0.40)
+	eye(0.60)
+
+	local smile = Instance.new("Frame")
+	smile.AnchorPoint = Vector2.new(0.5, 0.5)
+	smile.Position = UDim2.fromScale(0.50, 0.65)
+	smile.Size = UDim2.fromScale(0.30, 0.07)
+	smile.BackgroundColor3 = rgb(35, 52, 143)
+	smile.BorderSizePixel = 0
+	smile.ZIndex = holder.ZIndex + 2
+	smile.Parent = holder
+	addRound(smile, 99)
+end
+
+local function applyDiscordBranding(panel, header, likeBtn, joinBtn, claim, prize)
+	panel.BackgroundColor3 = DISCORD_SURFACE
+	panel.BackgroundTransparency = 0.12
+	local panelStroke = panel:FindFirstChildOfClass("UIStroke")
+	if panelStroke then panelStroke.Color = DISCORD_SURFACE_DARK end
+
+	header.BackgroundColor3 = DISCORD_BLURPLE
+	header.BackgroundTransparency = 0
+	gradientPair(header, DISCORD_BLURPLE_LIGHT, DISCORD_BLURPLE_DARK, 0)
+	local headerStroke = header:FindFirstChildOfClass("UIStroke")
+	if headerStroke then headerStroke.Color = rgb(20, 24, 45) end
+
+	local rim = header:FindFirstChild("WinRim")
+	if rim and rim:IsA("GuiObject") then
+		local s = rim:FindFirstChildOfClass("UIStroke")
+		if s then s.Color = rgb(40, 49, 160) end
+	end
+
+	T.gradient(likeBtn, DISCORD_BLURPLE)
+	T.gradient(joinBtn, DISCORD_BLURPLE)
+	T.gradient(claim, rgb(91, 98, 112))
+
+	if prize and prize:IsA("GuiObject") then
+		prize.BackgroundColor3 = DISCORD_CARD
+		prize.BackgroundTransparency = 0.10
+		local s = prize:FindFirstChildOfClass("UIStroke")
+		if s then s.Color = DISCORD_SURFACE_DARK end
+	end
+
+	makeDiscordHeaderIcon(header)
+end
+
 local old = pg:FindFirstChild("DiscordInvite")
 if old then
 	old:Destroy()
@@ -76,6 +213,8 @@ local hint = panel:WaitForChild("Hint")
 local prize = panel:WaitForChild("Prize")
 local amount = prize:WaitForChild("Amount")
 
+applyDiscordBranding(panel, header, likeBtn, joinBtn, claim, prize)
+
 -- Change only the content of the real Free Rewards controls. Their geometry,
 -- gradients, strokes, textures, shadows and typography remain untouched.
 local title = header:FindFirstChild("Title")
@@ -94,11 +233,8 @@ claim.Text = isFrench and "COMPRIS" or "GOT IT"
 -- Match the original Free Rewards "Locked" state for the bottom button.
 -- T.adoptWindow above wires BtnFill to this gradient, so the visible skinned
 -- layers receive the exact same grey palette as PyramidGroupRewards.
-local lockedColor = claim:GetAttribute("LockedColor")
-if typeof(lockedColor) ~= "Color3" then
-	lockedColor = rgb(104, 122, 152)
-end
-T.gradient(claim, lockedColor)
+-- Keep the bottom action subdued while staying inside the Discord palette.
+T.gradient(claim, rgb(91, 98, 112))
 
 -- Keep the exact Free Rewards layout, only remove reward-specific imagery/text
 -- that would otherwise imply coins or a claimable reward.
