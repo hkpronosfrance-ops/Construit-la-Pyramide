@@ -309,9 +309,10 @@ end)
 local WHITE = Color3.new(1, 1, 1)
 
 local pg = player:WaitForChild("PlayerGui")
-local gui = pg:WaitForChild("PyramidHUD")
-local friendGui = pg:WaitForChild("PyramidFriendBoost")
-local keysGui = pg:WaitForChild("PyramidKeys")
+local gui = pg:WaitForChild("PyramidHUD", 30)
+local friendGui = pg:WaitForChild("PyramidFriendBoost", 30)
+local keysGui = pg:WaitForChild("PyramidKeys", 30)
+if not gui or not friendGui or not keysGui then return end
 
 watchStaticText(pg)
 local mapForLocalization = workspace:FindFirstChild("PyramidMap")
