@@ -52,13 +52,22 @@ local function styleAdminLabel(o)
 	o.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	o.TextStrokeTransparency = 0
 
-	local oldCorner = o:FindFirstChild("AdminZoneCorner")
-	if oldCorner then
-		oldCorner:Destroy()
+	for _, child in o:GetChildren() do
+		if child:IsA("UIStroke") or child:IsA("UICorner") then
+			child:Destroy()
+		end
 	end
-	local oldStroke = o:FindFirstChild("AdminZoneStroke")
-	if oldStroke then
-		oldStroke:Destroy()
+
+	local parent = o.Parent
+	if parent and parent:IsA("GuiObject") then
+		parent.BackgroundTransparency = 1
+		parent.BorderSizePixel = 0
+
+		for _, child in parent:GetChildren() do
+			if child:IsA("UIStroke") or child:IsA("UICorner") then
+				child:Destroy()
+			end
+		end
 	end
 
 	local gradient = o:FindFirstChild("AdminZoneGradient")
@@ -71,8 +80,8 @@ local function styleAdminLabel(o)
 	gradient.Rotation = 90
 	gradient.Color = ColorSequence.new({
 		ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
-		ColorSequenceKeypoint.new(0.32, Color3.fromRGB(215, 215, 215)),
-		ColorSequenceKeypoint.new(0.68, Color3.fromRGB(85, 85, 85)),
+		ColorSequenceKeypoint.new(0.35, Color3.fromRGB(210, 210, 210)),
+		ColorSequenceKeypoint.new(0.70, Color3.fromRGB(90, 90, 90)),
 		ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 0, 0)),
 	})
 
@@ -82,7 +91,6 @@ local function styleAdminLabel(o)
 		end
 	end
 end
-
 local function styleAdminZone()
 	local p = pads()
 	local zone = p and p:FindFirstChild(ADMIN_ZONE_NAME)
