@@ -600,7 +600,7 @@ local function instaPlace(p)
 	end
 	instaRunning[p] = true
 	p:SetAttribute("InstaPlacing", true)
-	local per = math.max(20, math.ceil(carrying / INSTA_STEPS))
+	local per = math.clamp(math.ceil(carrying / INSTA_STEPS), 20, 40)
 	task.spawn(function()
 		local order, orderFloor, at = nil, nil, 1
 		while p.Parent and not finishing and cur.f <= t.Floors do
