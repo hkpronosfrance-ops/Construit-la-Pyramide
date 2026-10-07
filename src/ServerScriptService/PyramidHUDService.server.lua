@@ -55,7 +55,7 @@ local function refreshFriends(leaving)
 				n += 1
 			end
 		end
-		p:SetAttribute(C.Stats.FriendBoost, n * C.FriendBoostPerFriend)
+		p:SetAttribute(C.Stats.FriendBoost, math.min(n * C.FriendBoostPerFriend, C.FriendBoostMax or math.huge))
 	end
 end
 
@@ -82,13 +82,17 @@ for _, b in C.Boosts do
 	for index, tier in b.Tiers do
 		if tier.ProductId > 0 then
 			products[tier.ProductId] = function(p)
-				local level = p:GetAttribute(b.Level) or 0
-				local due = math.min(level + 1, #b.Tiers)
+				local level = C.boostLevel(b, p:GetAttribute(b.Level))
+				if level >= #b.Tiers then
+					return true
+				end
+				local due = level + 1
 				if index < due - 1 then
 					return
 				end
-				p:SetAttribute(b.Level, level + 1)
-				p:SetAttribute(b.Multiplier, C.multiplier(b, level + 1))
+				local nextLevel = math.min(level + 1, #b.Tiers)
+				p:SetAttribute(b.Level, nextLevel)
+				p:SetAttribute(b.Multiplier, C.multiplier(b, nextLevel))
 			end
 		end
 	end
