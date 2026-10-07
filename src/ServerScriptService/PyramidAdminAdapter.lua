@@ -3,6 +3,7 @@ local folder = RS.PyramidHUD
 local C = require(folder.Config)
 local U = require(folder.UpgradesConfig)
 local ServerBoosts = require(script.Parent:WaitForChild("PyramidServerBoosts"))
+local Ready = require(script.Parent:WaitForChild("PyramidPlayerReady"))
 
 local ADD = { coins = C.Stats.Coins, strength = C.Stats.Strength, speed = C.Stats.Speed }
 local SET = {
@@ -131,6 +132,7 @@ return {
 		end
 
 		local p = ctx.player(args[1])
+		assert(Ready.IsReady(p), p.Name .. "'s data is still loading. Try again in a moment.")
 		if action == "teleport" or action == "bring" then
 			local a, b = root(admin), root(p)
 			assert(a and b, "Both players need a character.")
