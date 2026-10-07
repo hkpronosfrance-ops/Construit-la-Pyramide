@@ -42,9 +42,9 @@ remote.OnServerEvent:Connect(function(p, action, id, seen)
 		return
 	end
 	busy[p] = true
-	local level = p:GetAttribute(u.Level) or 1
+	local level = Numbers.Integer(p:GetAttribute(u.Level), 1, 1, U.MaxLevel)
 	local price = U.Coins[level]
-	local coins = p:GetAttribute(C.Stats.Coins) or 0
+	local coins = Numbers.Integer(p:GetAttribute(C.Stats.Coins), 0, 0, 1e15)
 	if seen ~= level then
 		remote:FireClient(p, "denied", id)
 	elseif level >= U.MaxLevel or not price then
