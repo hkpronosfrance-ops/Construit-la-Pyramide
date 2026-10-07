@@ -85,7 +85,7 @@ C.PyramidFill = {
 
 C.Chamber = {
 	Minutes = 3,
-	MaxMinutes = 60,
+	MaxMinutes = 30,
 	Offers = {
 		{ Minutes = 1, Price = 49, ProductId = 3715452094 },
 		{ Minutes = 5, Price = 129, ProductId = 3715452098 },
