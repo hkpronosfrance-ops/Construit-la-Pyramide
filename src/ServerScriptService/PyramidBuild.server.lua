@@ -385,9 +385,9 @@ local function rebuild(total)
 end
 
 local helpers = {}
-local carry = {}
 local finishing = false
 local expected = 0
+local deliverPending
 
 local function addContribution(userId, blocks)
 	if blocks and blocks > 0 then
@@ -456,14 +456,15 @@ local function newPyramid(key)
 		setTotal(0)
 		sync()
 		finishing = false
-		local blocks = 0
-		for _, c in carry do
-			addContribution(c[1], c[2])
-			blocks += c[2]
-		end
-		table.clear(carry)
-		if blocks > 0 then
-			grow(math.min(blocks, t.Total))
+		-- Purchased block entitlements belong to players, not to server RAM.
+		-- Re-apply only what physically fits in this new pyramid and leave the
+		-- rest pending for later pyramids.
+		for _, p in Players:GetPlayers() do
+			task.defer(function()
+				if deliverPending then
+					deliverPending(p)
+				end
+			end)
 		end
 	end)
 end
@@ -670,28 +671,68 @@ local function instaPlace(p)
 	end)
 end
 
-local function robuxFill(p, amount)
-	if finishing or cur.f > t.Floors then
+local delivering = {}
+deliverPending = function(p)
+	if delivering[p] or finishing or cur.f > t.Floors or not p.Parent then
 		return false
 	end
+	local data = _G.PyramidData
+	if not (data and data.IsLoaded(p)) then
+		return false
+	end
+	local pendingBlocks = math.max(0, math.floor(tonumber(p:GetAttribute("PendingPurchasedBlocks")) or 0))
+	if pendingBlocks <= 0 then
+		return true
+	end
+
 	local base = math.max(placedTotal(), filling and target or 0)
-	local fits = math.clamp(t.Total - base, 0, amount)
+	local fits = math.min(pendingBlocks, math.max(0, t.Total - base))
+	if fits <= 0 then
+		return false
+	end
+
+	delivering[p] = true
+	-- Reserve the physical progress first. grow() updates target synchronously,
+	-- so another delivery cannot reserve the same remaining space.
+	addContribution(p.UserId, fits)
+	grow(base + fits)
+	p:SetAttribute("PendingPurchasedBlocks", pendingBlocks - fits)
+	delivering[p] = nil
+
+	-- Persist the consumed entitlement promptly. If this save fails, the normal
+	-- autosave/leave path retries; a crash before persistence favors re-delivery
+	-- rather than silently losing paid blocks.
+	task.spawn(function()
+		if p.Parent and data.IsLoaded(p) then
+			data.Save(p)
+		end
+	end)
+	return true
+end
+
+local function robuxFill(p, amount)
+	if type(amount) ~= "number" or amount <= 0 then
+		return false
+	end
+	local data = _G.PyramidData
+	if not (data and data.IsLoaded(p)) then
+		return false
+	end
+
+	amount = math.max(1, math.floor(amount))
+	-- The receipt grants a persistent player-owned entitlement. Physical world
+	-- delivery happens only after ProcessReceipt has saved the entitlement.
+	p:SetAttribute("PendingPurchasedBlocks", (p:GetAttribute("PendingPurchasedBlocks") or 0) + amount)
 	p:SetAttribute("Blocks", (p:GetAttribute("Blocks") or 0) + amount)
 	local gain = purchasedBlockCoinReward(amount)
 	p:SetAttribute(C.Stats.Coins, (p:GetAttribute(C.Stats.Coins) or 0) + gain)
-	addContribution(p.UserId, fits)
 	remote:FireClient(p, "placed", amount, gain)
-	if amount > fits then
-		table.insert(carry, { p.UserId, amount - fits })
-	end
-	if fits > 0 then
-		grow(base + fits)
-	end
 	return true
 end
 
 _G.PyramidBuild = {
 	Fill = robuxFill,
+	DeliverPending = deliverPending,
 	Start = function(key)
 		if finishing then
 			return nil
@@ -716,7 +757,27 @@ remote.OnServerEvent:Connect(function(p, action, f, list)
 		instaPlace(p)
 	end
 end)
+local function watchPending(p)
+	local function tryDeliver()
+		if p:GetAttribute("DataLoaded") == true and (p:GetAttribute("PendingPurchasedBlocks") or 0) > 0 then
+			task.defer(function()
+				if deliverPending then
+					deliverPending(p)
+				end
+			end)
+		end
+	end
+	p:GetAttributeChangedSignal("DataLoaded"):Connect(tryDeliver)
+	tryDeliver()
+end
+
+Players.PlayerAdded:Connect(watchPending)
+for _, p in Players:GetPlayers() do
+	watchPending(p)
+end
+
 Players.PlayerRemoving:Connect(function(p)
 	buckets[p] = nil
 	lastSync[p] = nil
+	delivering[p] = nil
 end)
