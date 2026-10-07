@@ -74,7 +74,10 @@ for zone, def in C.ZoneUnlock or {} do
 	end
 end
 
-local function sanitizeSavedValue(name, value)
+local function sanitizeSavedValue(name, value, fallbackMissing)
+	if value == nil and not fallbackMissing then
+		return nil
+	end
 	local spec = INTEGER_FIELDS[name]
 	if spec then
 		return Numbers.Integer(value, spec[3], spec[1], spec[2])
@@ -86,7 +89,7 @@ local function sanitizeSavedValue(name, value)
 end
 
 local function sanitizePlayerAttribute(p, name)
-	local value = sanitizeSavedValue(name, p:GetAttribute(name))
+	local value = sanitizeSavedValue(name, p:GetAttribute(name), true)
 	if value ~= nil then
 		p:SetAttribute(name, value)
 	end
