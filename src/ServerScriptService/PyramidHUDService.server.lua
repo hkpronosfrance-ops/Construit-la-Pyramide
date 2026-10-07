@@ -4,6 +4,7 @@ local MPS = game:GetService("MarketplaceService")
 
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
+local Ready = require(script.Parent:WaitForChild("PyramidPlayerReady"))
 
 local DEFAULTS = {
 	[C.Stats.Coins] = 0,
@@ -274,7 +275,7 @@ groupRemote.OnServerEvent:Connect(function(p, action)
 	elseif action == "claim" then
 		local joined, verifiable = member(p)
 		local data = _G.PyramidData
-		if data and not data.IsLoaded(p) then
+		if not Ready.IsReady(p) or not data or not data.IsLoaded(p) then
 			groupRemote:FireClient(p, "denied", "Please wait a moment")
 		elseif p:GetAttribute("GroupRewardClaimed") then
 			groupRemote:FireClient(p, "denied", "You already claimed this reward.")
