@@ -584,8 +584,10 @@ local function watchPlayer(p)
 			task.defer(deliverPending, p)
 		end
 	end
+	-- DataLoaded only: receipt grants are delivered explicitly by ProcessReceipt
+	-- after the entitlement has been saved, so an unsaved purchase cannot leak
+	-- into transient chamber state.
 	p:GetAttributeChangedSignal("DataLoaded"):Connect(tryDeliver)
-	p:GetAttributeChangedSignal("PendingChamberMinutes"):Connect(tryDeliver)
 	tryDeliver()
 end
 
