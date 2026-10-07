@@ -6,6 +6,8 @@ C.Icons = {
 }
 
 C.FriendBoostPerFriend = 10
+C.FriendBoostMax = 50
+C.PyramidMinContribution = 100
 
 C.Boosts = {
 	{
@@ -58,12 +60,20 @@ function C.boost(id)
 	end
 end
 
+function C.boostLevel(boost, level)
+	return math.clamp(math.floor(tonumber(level) or 0), 0, #boost.Tiers)
+end
+
 function C.nextTier(boost, level)
-	return boost.Tiers[math.min((level or 0) + 1, #boost.Tiers)]
+	local current = C.boostLevel(boost, level)
+	if current >= #boost.Tiers then
+		return nil
+	end
+	return boost.Tiers[current + 1]
 end
 
 function C.multiplier(boost, level)
-	return boost.Factor ^ (level or 0)
+	return boost.Factor ^ C.boostLevel(boost, level)
 end
 
 C.PyramidFill = {
