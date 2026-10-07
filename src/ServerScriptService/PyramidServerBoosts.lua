@@ -1,5 +1,6 @@
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Numbers = require(script.Parent:WaitForChild("PyramidNumbers"))
 
 local hud = RS:WaitForChild("PyramidHUD")
 
@@ -68,8 +69,8 @@ function M.Get(key)
 		return 1
 	end
 	local multAttr, endAttr = attrs(key)
-	local mult = tonumber(hud:GetAttribute(multAttr)) or 1
-	local endsAt = tonumber(hud:GetAttribute(endAttr)) or 0
+	local mult = Numbers.Finite(hud:GetAttribute(multAttr), 1, 1, M.MaxMultiplier)
+	local endsAt = Numbers.Finite(hud:GetAttribute(endAttr), 0, 0)
 	if mult <= 1 or endsAt <= now() then
 		return 1
 	end
@@ -90,8 +91,8 @@ end
 function M.Set(key, multiplier, durationSeconds)
 	key = M.Resolve(key) or key
 	assert(key == "all" or TYPES[key], "Unknown server multiplier.")
-	multiplier = math.clamp(tonumber(multiplier) or 1, 1, M.MaxMultiplier)
-	durationSeconds = math.clamp(tonumber(durationSeconds) or 0, 0, M.MaxDurationSeconds)
+	multiplier = Numbers.Finite(multiplier, 1, 1, M.MaxMultiplier)
+	durationSeconds = Numbers.Finite(durationSeconds, 0, 0, M.MaxDurationSeconds)
 	if key == "all" then
 		for one in TYPES do
 			setOne(one, multiplier, durationSeconds)
@@ -119,7 +120,7 @@ function M.Status(key)
 	end
 	local multAttr, endAttr = attrs(key)
 	local multiplier = M.Get(key)
-	local endsAt = tonumber(hud:GetAttribute(endAttr)) or 0
+	local endsAt = Numbers.Finite(hud:GetAttribute(endAttr), 0, 0)
 	return multiplier, math.max(0, endsAt - now())
 end
 
@@ -128,7 +129,7 @@ task.spawn(function()
 		local t = now()
 		for key in TYPES do
 			local multAttr, endAttr = attrs(key)
-			local endsAt = tonumber(hud:GetAttribute(endAttr)) or 0
+			local endsAt = Numbers.Finite(hud:GetAttribute(endAttr), 0, 0)
 			if endsAt > 0 and endsAt <= t then
 				hud:SetAttribute(multAttr, 1)
 				hud:SetAttribute(endAttr, 0)
