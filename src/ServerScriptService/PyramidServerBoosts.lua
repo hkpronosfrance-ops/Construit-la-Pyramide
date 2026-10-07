@@ -1,8 +1,13 @@
 local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local hud = RS:WaitForChild("PyramidHUD")
 
 local M = {}
+
+local STUDIO = RunService:IsStudio()
+M.MaxMultiplier = STUDIO and 100 or 5
+M.MaxDurationSeconds = STUDIO and 24 * 60 * 60 or 6 * 60 * 60
 
 local TYPES = {
 	speed = "Speed",
@@ -85,8 +90,8 @@ end
 function M.Set(key, multiplier, durationSeconds)
 	key = M.Resolve(key) or key
 	assert(key == "all" or TYPES[key], "Unknown server multiplier.")
-	multiplier = tonumber(multiplier) or 1
-	durationSeconds = tonumber(durationSeconds) or 0
+	multiplier = math.clamp(tonumber(multiplier) or 1, 1, M.MaxMultiplier)
+	durationSeconds = math.clamp(tonumber(durationSeconds) or 0, 0, M.MaxDurationSeconds)
 	if key == "all" then
 		for one in TYPES do
 			setOne(one, multiplier, durationSeconds)

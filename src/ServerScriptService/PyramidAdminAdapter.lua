@@ -94,8 +94,10 @@ return {
 		if action == "serverboost" then
 			local kind = ServerBoosts.Resolve(args[1])
 			assert(kind, "Use speed, coins, strength, pyramids or all.")
-			local multiplier = ctx.number(args[2], 1, 100, false)
-			local minutes = ctx.number(args[3], 0.1, 1440, false)
+			local maxMultiplier = ServerBoosts.MaxMultiplier or 5
+			local maxMinutes = math.floor((ServerBoosts.MaxDurationSeconds or 6 * 60 * 60) / 60)
+			local multiplier = ctx.number(args[2], 1, maxMultiplier, false)
+			local minutes = ctx.number(args[3], 0.1, maxMinutes, false)
 			ServerBoosts.Set(kind, multiplier, minutes * 60)
 			return ("Server boost %s x%s for %s min."):format(kind, tostring(multiplier), tostring(minutes))
 		end
