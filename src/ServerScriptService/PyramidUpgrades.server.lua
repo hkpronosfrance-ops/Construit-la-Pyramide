@@ -5,19 +5,21 @@ local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local U = require(folder:WaitForChild("UpgradesConfig"))
 local Ready = require(script.Parent:WaitForChild("PyramidPlayerReady"))
+local Numbers = require(script.Parent:WaitForChild("PyramidNumbers"))
 
 local remote = folder:FindFirstChild("Upgrades") or Instance.new("RemoteEvent")
 remote.Name = "Upgrades"
 remote.Parent = folder
 
 local function apply(p, u, level)
+	level = Numbers.Integer(level, 1, 1, U.MaxLevel)
 	p:SetAttribute(u.Level, level)
 	p:SetAttribute(u.Value, u.Effect(level))
 end
 
 local function onJoin(p)
 	for _, u in U.List do
-		local level = math.clamp(math.floor(tonumber(p:GetAttribute(u.Level)) or 1), 1, U.MaxLevel)
+		local level = Numbers.Integer(p:GetAttribute(u.Level), 1, 1, U.MaxLevel)
 		apply(p, u, level)
 	end
 end
@@ -40,9 +42,9 @@ remote.OnServerEvent:Connect(function(p, action, id, seen)
 		return
 	end
 	busy[p] = true
-	local level = p:GetAttribute(u.Level) or 1
+	local level = Numbers.Integer(p:GetAttribute(u.Level), 1, 1, U.MaxLevel)
 	local price = U.Coins[level]
-	local coins = p:GetAttribute(C.Stats.Coins) or 0
+	local coins = Numbers.Integer(p:GetAttribute(C.Stats.Coins), 0, 0, 1e15)
 	if seen ~= level then
 		remote:FireClient(p, "denied", id)
 	elseif level >= U.MaxLevel or not price then
@@ -79,10 +81,10 @@ task.spawn(function()
 			if productId > 0 then
 				products[productId] = function(p)
 					local paidAttr = "PaidUpgrade_" .. u.Id
-					local level = math.clamp(math.floor(tonumber(p:GetAttribute(u.Level)) or 1), 1, U.MaxLevel)
-					local entitledLevel = math.clamp(index + 1, 1, U.MaxLevel)
+					local level = Numbers.Integer(p:GetAttribute(u.Level), 1, 1, U.MaxLevel)
+					local entitledLevel = Numbers.Integer(index + 1, 1, 1, U.MaxLevel)
 					if index < level then
-						p:SetAttribute(paidAttr, math.max(math.floor(tonumber(p:GetAttribute(paidAttr)) or 1), entitledLevel))
+						p:SetAttribute(paidAttr, math.max(Numbers.Integer(p:GetAttribute(paidAttr), 1, 1, U.MaxLevel), entitledLevel))
 						return true
 					end
 					local expected = level
@@ -90,7 +92,7 @@ task.spawn(function()
 						return false
 					end
 					apply(p, u, level + 1)
-					p:SetAttribute(paidAttr, math.max(math.floor(tonumber(p:GetAttribute(paidAttr)) or 1), level + 1))
+					p:SetAttribute(paidAttr, math.max(Numbers.Integer(p:GetAttribute(paidAttr), 1, 1, U.MaxLevel), level + 1))
 					remote:FireClient(p, "bought", u.Id)
 					return true
 				end

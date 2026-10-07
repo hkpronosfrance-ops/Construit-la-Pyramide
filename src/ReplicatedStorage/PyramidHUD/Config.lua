@@ -61,7 +61,11 @@ function C.boost(id)
 end
 
 function C.boostLevel(boost, level)
-	return math.clamp(math.floor(tonumber(level) or 0), 0, #boost.Tiers)
+	local n = tonumber(level)
+	if not n or n ~= n or n == math.huge or n == -math.huge then
+		n = 0
+	end
+	return math.clamp(math.floor(n), 0, #boost.Tiers)
 end
 
 function C.nextTier(boost, level)

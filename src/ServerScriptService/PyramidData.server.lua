@@ -7,6 +7,7 @@ local HttpService = game:GetService("HttpService")
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local U = require(folder:WaitForChild("UpgradesConfig"))
+local Numbers = require(script.Parent:WaitForChild("PyramidNumbers"))
 
 local LIVE = not RunService:IsStudio()
 local STORE = LIVE and DSS:GetDataStore("BuildThePyramid_Players_v1") or nil
@@ -42,6 +43,59 @@ for zone, def in C.ZoneUnlock or {} do
 	end
 end
 
+local MAX_NUMBER = 1e15
+local INTEGER_FIELDS = {
+	[C.Stats.Coins] = { 0, MAX_NUMBER, 0 },
+	[C.Stats.Speed] = { 0, MAX_NUMBER, 0 },
+	[C.Stats.Strength] = { 0, MAX_NUMBER, 0 },
+	[C.Stats.Pyramids] = { 0, MAX_NUMBER, 0 },
+	[C.Stats.Carrying] = { 0, MAX_NUMBER, 0 },
+	Blocks = { 0, MAX_NUMBER, 0 },
+	PendingPurchasedBlocks = { 0, MAX_NUMBER, 0 },
+	PendingChamberMinutes = { 0, MAX_NUMBER, 0 },
+}
+for _, b in C.Boosts do
+	INTEGER_FIELDS[b.Level] = { 0, #b.Tiers, 0 }
+	INTEGER_FIELDS["PaidBoost_" .. b.Id] = { 0, #b.Tiers, 0 }
+end
+for _, u in U.List do
+	INTEGER_FIELDS[u.Level] = { 1, U.MaxLevel, 1 }
+	INTEGER_FIELDS["PaidUpgrade_" .. u.Id] = { 1, U.MaxLevel, 1 }
+end
+
+local BOOLEAN_FIELDS = {
+	GroupRewardClaimed = true,
+	PharaohOff = true,
+}
+for zone, def in C.ZoneUnlock or {} do
+	BOOLEAN_FIELDS["Unlocked_" .. zone] = true
+	if (def.ProductId or 0) > 0 then
+		BOOLEAN_FIELDS["PaidZone_" .. zone] = true
+	end
+end
+
+local function sanitizeSavedValue(name, value, fallbackMissing)
+	if value == nil and not fallbackMissing then
+		return nil
+	end
+	local spec = INTEGER_FIELDS[name]
+	if spec then
+		return Numbers.Integer(value, spec[3], spec[1], spec[2])
+	end
+	if BOOLEAN_FIELDS[name] then
+		return type(value) == "boolean" and value or nil
+	end
+	return nil
+end
+
+local function sanitizePlayerAttribute(p, name)
+	local value = sanitizeSavedValue(name, p:GetAttribute(name), true)
+	if value ~= nil then
+		p:SetAttribute(name, value)
+	end
+	return value
+end
+
 local loaded = {}
 local lastSaved = {}
 local pending = 0
@@ -72,8 +126,8 @@ end
 local function snapshot(p)
 	local data = { Version = VERSION }
 	for _, name in SAVED do
-		local v = p:GetAttribute(name)
-		if type(v) == "number" or type(v) == "boolean" then
+		local v = sanitizePlayerAttribute(p, name)
+		if v ~= nil then
 			data[name] = v
 		end
 	end
@@ -294,7 +348,7 @@ local function migratePaidEntitlements(p)
 	for _, u in U.List do
 		local attr = "PaidUpgrade_" .. u.Id
 		if p:GetAttribute(attr) == nil then
-			local level = math.clamp(math.floor(tonumber(p:GetAttribute(u.Level)) or 1), 1, U.MaxLevel)
+			local level = Numbers.Integer(p:GetAttribute(u.Level), 1, 1, U.MaxLevel)
 			p:SetAttribute(attr, level)
 		end
 	end
@@ -323,7 +377,7 @@ local function derive(p)
 		p:SetAttribute(b.Multiplier, C.multiplier(b, level))
 	end
 	for _, u in U.List do
-		local level = math.clamp(math.floor(tonumber(p:GetAttribute(u.Level)) or 1), 1, U.MaxLevel)
+		local level = Numbers.Integer(p:GetAttribute(u.Level), 1, 1, U.MaxLevel)
 		p:SetAttribute(u.Level, level)
 		p:SetAttribute(u.Value, u.Effect(level))
 	end
@@ -365,8 +419,8 @@ local function load(p)
 	end
 	if type(data) == "table" then
 		for _, name in SAVED do
-			local v = data[name]
-			if type(v) == "number" or type(v) == "boolean" then
+			local v = sanitizeSavedValue(name, data[name])
+			if v ~= nil then
 				p:SetAttribute(name, v)
 			end
 		end

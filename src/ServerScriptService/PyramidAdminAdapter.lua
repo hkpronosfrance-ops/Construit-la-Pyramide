@@ -4,6 +4,7 @@ local C = require(folder.Config)
 local U = require(folder.UpgradesConfig)
 local ServerBoosts = require(script.Parent:WaitForChild("PyramidServerBoosts"))
 local Ready = require(script.Parent:WaitForChild("PyramidPlayerReady"))
+local Numbers = require(script.Parent:WaitForChild("PyramidNumbers"))
 
 local ADD = { coins = C.Stats.Coins, strength = C.Stats.Strength, speed = C.Stats.Speed }
 local SET = {
@@ -24,7 +25,7 @@ local function root(p)
 end
 
 local function paidUpgradeFloor(p, u)
-	return math.clamp(math.floor(tonumber(p:GetAttribute("PaidUpgrade_" .. u.Id)) or 1), 1, U.MaxLevel)
+	return Numbers.Integer(p:GetAttribute("PaidUpgrade_" .. u.Id), 1, 1, U.MaxLevel)
 end
 
 local function paidBoostFloor(p, b)
@@ -32,13 +33,13 @@ local function paidBoostFloor(p, b)
 end
 
 local function setUpgrade(p, u, level)
-	level = math.clamp(math.floor(level), paidUpgradeFloor(p, u), U.MaxLevel)
+	level = Numbers.Integer(level, paidUpgradeFloor(p, u), paidUpgradeFloor(p, u), U.MaxLevel)
 	p:SetAttribute(u.Level, level)
 	p:SetAttribute(u.Value, u.Effect(level))
 end
 
 local function setBoost(p, b, times)
-	times = math.clamp(math.floor(times), paidBoostFloor(p, b), #b.Tiers)
+	times = Numbers.Integer(times, paidBoostFloor(p, b), paidBoostFloor(p, b), #b.Tiers)
 	p:SetAttribute(b.Level, times)
 	p:SetAttribute(b.Multiplier, C.multiplier(b, times))
 end
@@ -93,10 +94,11 @@ return {
 			assert(s:GetAttribute("ChamberOpen"), "The chamber is closed: finish a pyramid first.")
 			local n = ctx.number(args[1], 1, 60, true)
 			local max = C.Chamber.MaxMinutes
-			local mins = s:GetAttribute("ChamberMinutes") or C.Chamber.Minutes
+			local mins = Numbers.Integer(s:GetAttribute("ChamberMinutes"), C.Chamber.Minutes, C.Chamber.Minutes, max)
 			local add = math.clamp(n, 0, max - mins)
+			local endAt = Numbers.Finite(s:GetAttribute("ChamberEnd"), workspace:GetServerTimeNow(), 0)
 			s:SetAttribute("ChamberMinutes", mins + add)
-			s:SetAttribute("ChamberEnd", (s:GetAttribute("ChamberEnd") or workspace:GetServerTimeNow()) + add * 60)
+			s:SetAttribute("ChamberEnd", math.max(endAt, workspace:GetServerTimeNow()) + add * 60)
 			return ("Chamber +%d min (%d / %d)."):format(add, mins + add, max)
 		end
 		if action == "chamberclose" then
@@ -144,13 +146,13 @@ return {
 			return "Brought " .. p.Name .. "."
 		end
 		if action == "carry" then
-			local cap = p:GetAttribute(C.Stats.Capacity) or 1
+			local cap = Numbers.Integer(p:GetAttribute(C.Stats.Capacity), 1, 1, 1e15)
 			local n = ctx.number(args[2], 0, cap, true)
 			p:SetAttribute(C.Stats.Carrying, n)
 			return p.Name .. " now carries " .. n .. " blocks."
 		end
 		if action == "fillbag" then
-			local cap = p:GetAttribute(C.Stats.Capacity) or 1
+			local cap = Numbers.Integer(p:GetAttribute(C.Stats.Capacity), 1, 1, 1e15)
 			p:SetAttribute(C.Stats.Carrying, cap)
 			return "Backpack filled for " .. p.Name .. " (" .. cap .. ")."
 		end
@@ -206,7 +208,12 @@ return {
 		local key = ADD[action] or SET[action]
 		assert(key, "Unknown command.")
 		local n = ctx.number(args[2], 0, 1e15, true)
-		p:SetAttribute(key, ADD[action] and ((p:GetAttribute(key) or 0) + n) or n)
+		if ADD[action] then
+			local current = Numbers.Integer(p:GetAttribute(key), 0, 0, 1e15)
+			p:SetAttribute(key, math.min(1e15, current + n))
+		else
+			p:SetAttribute(key, Numbers.Integer(n, 0, 0, 1e15))
+		end
 		return key .. " updated for " .. p.Name .. "."
 	end,
 }
