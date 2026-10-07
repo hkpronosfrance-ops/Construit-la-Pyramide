@@ -122,17 +122,10 @@ for zoneName, u in C.ZoneUnlock or {} do
 end
 for _, o in (C.Chamber and C.Chamber.Offers) or {} do
 	if (o.ProductId or 0) > 0 then
-		products[o.ProductId] = function()
-			local s = site()
-			if not (s and s:GetAttribute("ChamberOpen")) then
-				return false
-			end
-			local mins = s:GetAttribute("ChamberMinutes") or C.Chamber.Minutes
-			if mins + o.Minutes > C.Chamber.MaxMinutes then
-				return false
-			end
-			s:SetAttribute("ChamberMinutes", mins + o.Minutes)
-			s:SetAttribute("ChamberEnd", (s:GetAttribute("ChamberEnd") or workspace:GetServerTimeNow()) + o.Minutes * 60)
+		products[o.ProductId] = function(p)
+			-- The receipt grants a persistent player-owned credit first. The
+			-- Chamber service consumes only what fits in an active chamber.
+			p:SetAttribute("PendingChamberMinutes", (p:GetAttribute("PendingChamberMinutes") or 0) + o.Minutes)
 			return true
 		end
 	end
@@ -210,10 +203,14 @@ task.spawn(function()
 	end)
 end)
 
-local function deliverPurchasedBlocks(p)
+local function deliverPersistentPurchases(p)
 	local build = _G.PyramidBuild
 	if build and build.DeliverPending then
 		task.defer(build.DeliverPending, p)
+	end
+	local chamber = _G.PyramidChamber
+	if chamber and chamber.DeliverPending then
+		task.defer(chamber.DeliverPending, p)
 	end
 end
 
@@ -226,7 +223,7 @@ MPS.ProcessReceipt = function(receipt)
 	end
 	if data.HasReceipt(p, receipt.PurchaseId) then
 		if data.Save(p) then
-			deliverPurchasedBlocks(p)
+			deliverPersistentPurchases(p)
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		end
 		return Enum.ProductPurchaseDecision.NotProcessedYet
@@ -243,8 +240,9 @@ MPS.ProcessReceipt = function(receipt)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	-- World delivery starts only after the paid entitlement and receipt are
-	-- durably saved. Other product types simply have nothing pending to deliver.
-	deliverPurchasedBlocks(p)
+	-- durably saved. Block and chamber credits can therefore survive a crash
+	-- before an active world state is available to consume them.
+	deliverPersistentPurchases(p)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 
