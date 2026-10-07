@@ -691,20 +691,32 @@ deliverPending = function(p)
 		return false
 	end
 
+	-- Reserve a unique slice of the current pyramid. grow() raises target
+	-- synchronously, so other buyers see the reserved space immediately.
+	local deliveryType = t.Key
+	local deliveryTarget = base + fits
 	delivering[p] = true
-	-- Reserve the physical progress first. grow() updates target synchronously,
-	-- so another delivery cannot reserve the same remaining space.
 	addContribution(p.UserId, fits)
-	grow(base + fits)
-	p:SetAttribute("PendingPurchasedBlocks", pendingBlocks - fits)
-	delivering[p] = nil
+	grow(deliveryTarget)
 
-	-- Persist the consumed entitlement promptly. If this save fails, the normal
-	-- autosave/leave path retries; a crash before persistence favors re-delivery
-	-- rather than silently losing paid blocks.
+	-- Do not consume the persistent entitlement until its physical progress has
+	-- actually reached the reserved target. A crash or destructive rebuild while
+	-- the animation is still growing therefore leaves the paid blocks pending.
 	task.spawn(function()
-		if p.Parent and data.IsLoaded(p) then
+		while p.Parent and data.IsLoaded(p) and t.Key == deliveryType and placedTotal() < deliveryTarget do
+			task.wait(0.05)
+		end
+		local delivered = p.Parent and data.IsLoaded(p) and t.Key == deliveryType and placedTotal() >= deliveryTarget
+		if delivered then
+			local current = math.max(0, math.floor(tonumber(p:GetAttribute("PendingPurchasedBlocks")) or 0))
+			p:SetAttribute("PendingPurchasedBlocks", math.max(0, current - fits))
 			data.Save(p)
+		end
+		delivering[p] = nil
+		-- A second purchase may have arrived while this slice was being delivered,
+		-- or a smaller entitlement may still fit in the current pyramid.
+		if p.Parent and data.IsLoaded(p) and deliverPending then
+			task.defer(deliverPending, p)
 		end
 	end)
 	return true
