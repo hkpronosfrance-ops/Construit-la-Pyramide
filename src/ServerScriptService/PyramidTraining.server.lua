@@ -6,6 +6,7 @@ local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local T = C.Training
 local ServerBoosts = require(script.Parent:WaitForChild("PyramidServerBoosts"))
+local Ready = require(script.Parent:WaitForChild("PyramidPlayerReady"))
 local remote = folder:FindFirstChild("Training") or Instance.new("RemoteEvent")
 remote.Name = "Training"
 remote.Parent = folder
@@ -67,6 +68,9 @@ local function multiplier(p, zone)
 end
 
 local function gain(p, zone, stat, base, boostAttr, quiet)
+	if not Ready.IsReady(p) then
+		return 0
+	end
 	local serverKind = stat == C.Stats.Speed and "speed" or "strength"
 	local amount = base * multiplier(p, zone) * (p:GetAttribute(boostAttr) or 1)
 		* ServerBoosts.Get(serverKind)
@@ -102,6 +106,9 @@ local function stopBench(p, fromClient)
 end
 
 local function startBench(p, zone, pad, prompt)
+	if not Ready.IsReady(p) then
+		return
+	end
 	if benching[p] or occupied[pad] then
 		return
 	end
@@ -194,6 +201,21 @@ task.spawn(function()
 		for _, p in Players:GetPlayers() do
 			local hrp, hum = root(p)
 			local s = benching[p]
+			if not Ready.IsReady(p) then
+				if s then
+					stopBench(p)
+					s = nil
+				end
+				if p:GetAttribute("OnTreadmill") ~= nil then
+					p:SetAttribute("OnTreadmill", nil)
+				end
+				if p:GetAttribute("InSpring") ~= nil then
+					p:SetAttribute("InSpring", nil)
+				end
+				nextTread[p] = nil
+				nextSpring[p] = nil
+				continue
+			end
 			if s then
 				if not hrp or not hum or hum.Health <= 0 or (hrp.Position - s.pad.Position).Magnitude > 12 then
 					stopBench(p)

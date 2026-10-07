@@ -6,6 +6,7 @@ local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local S = require(folder:WaitForChild("PyramidShape"))
 local ServerBoosts = require(script.Parent:WaitForChild("PyramidServerBoosts"))
+local Ready = require(script.Parent:WaitForChild("PyramidPlayerReady"))
 
 local remote = folder:FindFirstChild("Build") or Instance.new("RemoteEvent")
 remote.Name = "Build"
@@ -475,7 +476,7 @@ function finish()
 	end
 	finishing = true
 	for _, p in Players:GetPlayers() do
-		if (helpers[p.UserId] or 0) >= (C.PyramidMinContribution or 1) then
+		if Ready.IsReady(p) and (helpers[p.UserId] or 0) >= (C.PyramidMinContribution or 1) then
 			local baseAdd = (p:GetAttribute("Pharaoh") and C.Pharaoh and C.Pharaoh.Pyramids) or 1
 			local add = pyramidReward(baseAdd)
 			p:SetAttribute(C.Stats.Pyramids, (p:GetAttribute(C.Stats.Pyramids) or 0) + add)
@@ -524,6 +525,10 @@ local function place(p, f, list)
 		if #out > 0 then
 			remote:FireClient(p, "reject", f, out)
 		end
+	end
+	if not Ready.IsReady(p) then
+		refuse(1)
+		return
 	end
 	local ch = p.Character
 	local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
@@ -594,6 +599,9 @@ local function atSite(hrp)
 	return math.abs(d.X) <= half and math.abs(d.Z) <= half and d.Y < t.Height + 20
 end
 local function instaPlace(p)
+	if not Ready.IsReady(p) then
+		return
+	end
 	local ch = p.Character
 	local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
 	if instaRunning[p] or not p:GetAttribute("Pharaoh") or finishing or not hrp or not atSite(hrp) then
@@ -608,7 +616,7 @@ local function instaPlace(p)
 	local per = math.clamp(math.ceil(carrying / INSTA_STEPS), 20, 40)
 	task.spawn(function()
 		local order, orderFloor, at = nil, nil, 1
-		while p.Parent and not finishing and cur.f <= t.Floors do
+		while Ready.IsReady(p) and not finishing and cur.f <= t.Floors do
 			carrying = p:GetAttribute(C.Stats.Carrying) or 0
 			if carrying <= 0 or not hrp.Parent then
 				break
@@ -723,6 +731,9 @@ deliverPending = function(p)
 end
 
 local function robuxFill(p, amount)
+	if not Ready.IsReady(p) then
+		return false
+	end
 	if type(amount) ~= "number" or amount <= 0 then
 		return false
 	end
