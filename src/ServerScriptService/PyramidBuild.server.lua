@@ -6,6 +6,7 @@ local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local S = require(folder:WaitForChild("PyramidShape"))
 local ServerBoosts = require(script.Parent:WaitForChild("PyramidServerBoosts"))
+local Ready = require(script.Parent:WaitForChild("PyramidPlayerReady"))
 
 local remote = folder:FindFirstChild("Build") or Instance.new("RemoteEvent")
 remote.Name = "Build"
@@ -525,6 +526,10 @@ local function place(p, f, list)
 			remote:FireClient(p, "reject", f, out)
 		end
 	end
+	if not Ready.IsReady(p) then
+		refuse(1)
+		return
+	end
 	local ch = p.Character
 	local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
 	local carrying = p:GetAttribute(C.Stats.Carrying) or 0
@@ -594,6 +599,9 @@ local function atSite(hrp)
 	return math.abs(d.X) <= half and math.abs(d.Z) <= half and d.Y < t.Height + 20
 end
 local function instaPlace(p)
+	if not Ready.IsReady(p) then
+		return
+	end
 	local ch = p.Character
 	local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
 	if instaRunning[p] or not p:GetAttribute("Pharaoh") or finishing or not hrp or not atSite(hrp) then
@@ -723,6 +731,9 @@ deliverPending = function(p)
 end
 
 local function robuxFill(p, amount)
+	if not Ready.IsReady(p) then
+		return false
+	end
 	if type(amount) ~= "number" or amount <= 0 then
 		return false
 	end
