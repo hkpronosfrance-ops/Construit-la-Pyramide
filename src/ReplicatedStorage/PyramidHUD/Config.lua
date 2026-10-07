@@ -103,8 +103,9 @@ C.Training = {
 	TreadInterval = 1,
 	BaseStrength = 1,
 	BaseSpeed = 1,
+	MaxWalkSpeed = 150,
 	WalkSpeed = function(speed)
-		return math.floor(16 + 1.1035 * math.max(0, speed) ^ 0.435 + 0.5)
+		return math.min(C.Training.MaxWalkSpeed, math.floor(16 + 1.1035 * math.max(0, speed) ^ 0.435 + 0.5))
 	end,
 	RepSpeed = function(mult)
 		return 1 + 0.3 * math.log(math.max(1, mult), 2)
