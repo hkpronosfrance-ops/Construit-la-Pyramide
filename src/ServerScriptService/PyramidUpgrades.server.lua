@@ -73,11 +73,20 @@ task.spawn(function()
 		for index, productId in u.ProductIds do
 			if productId > 0 then
 				products[productId] = function(p)
-					local level = p:GetAttribute(u.Level) or 1
-					if level < U.MaxLevel and index >= level - 1 then
-						apply(p, u, level + 1)
-						remote:FireClient(p, "bought", u.Id)
+					local level = math.clamp(math.floor(tonumber(p:GetAttribute(u.Level)) or 1), 1, U.MaxLevel)
+					if level >= U.MaxLevel then
+						return true
 					end
+					local expected = level
+					if index < expected then
+						return true
+					end
+					if index > expected then
+						return false
+					end
+					apply(p, u, level + 1)
+					remote:FireClient(p, "bought", u.Id)
+					return true
 				end
 			end
 		end

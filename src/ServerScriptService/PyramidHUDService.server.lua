@@ -86,13 +86,16 @@ for _, b in C.Boosts do
 				if level >= #b.Tiers then
 					return true
 				end
-				local due = level + 1
-				if index < due - 1 then
-					return
+				local expected = level + 1
+				if index < expected then
+					return true
 				end
-				local nextLevel = math.min(level + 1, #b.Tiers)
-				p:SetAttribute(b.Level, nextLevel)
-				p:SetAttribute(b.Multiplier, C.multiplier(b, nextLevel))
+				if index > expected then
+					return false
+				end
+				p:SetAttribute(b.Level, expected)
+				p:SetAttribute(b.Multiplier, C.multiplier(b, expected))
+				return true
 			end
 		end
 	end
@@ -113,6 +116,7 @@ for zoneName, u in C.ZoneUnlock or {} do
 	if (u.ProductId or 0) > 0 then
 		products[u.ProductId] = function(p)
 			p:SetAttribute("Unlocked_" .. zoneName, true)
+			return true
 		end
 	end
 end
@@ -129,6 +133,7 @@ for _, o in (C.Chamber and C.Chamber.Offers) or {} do
 			end
 			s:SetAttribute("ChamberMinutes", mins + o.Minutes)
 			s:SetAttribute("ChamberEnd", (s:GetAttribute("ChamberEnd") or workspace:GetServerTimeNow()) + o.Minutes * 60)
+			return true
 		end
 	end
 end
@@ -213,10 +218,13 @@ MPS.ProcessReceipt = function(receipt)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	if data.HasReceipt(p, receipt.PurchaseId) then
-		return Enum.ProductPurchaseDecision.PurchaseGranted
+		if data.Save(p) then
+			return Enum.ProductPurchaseDecision.PurchaseGranted
+		end
+		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	local ok, result = pcall(grant, p)
-	if not ok or result == false then
+	if not ok or result ~= true then
 		if not ok then
 			warn("[Purchases] " .. tostring(result))
 		end
