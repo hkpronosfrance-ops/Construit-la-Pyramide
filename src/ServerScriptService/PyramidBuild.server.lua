@@ -399,6 +399,10 @@ local function coinReward(blocks)
 	return math.floor(blocks * S.CoinsPerBlock * t.Mult * ServerBoosts.Get("coins") + 0.5)
 end
 
+local function purchasedBlockCoinReward(blocks)
+	return math.floor(blocks * S.CoinsPerBlock * t.Mult + 0.5)
+end
+
 local function pyramidReward(base)
 	return math.max(1, math.floor(base * ServerBoosts.Get("pyramids") + 0.5))
 end
@@ -673,7 +677,7 @@ local function robuxFill(p, amount)
 	local base = math.max(placedTotal(), filling and target or 0)
 	local fits = math.clamp(t.Total - base, 0, amount)
 	p:SetAttribute("Blocks", (p:GetAttribute("Blocks") or 0) + amount)
-	local gain = coinReward(amount)
+	local gain = purchasedBlockCoinReward(amount)
 	p:SetAttribute(C.Stats.Coins, (p:GetAttribute(C.Stats.Coins) or 0) + gain)
 	addContribution(p.UserId, fits)
 	remote:FireClient(p, "placed", amount, gain)
