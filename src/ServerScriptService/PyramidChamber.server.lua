@@ -485,7 +485,7 @@ local function pendingMinutes(p)
 end
 
 local function deliverPending(p)
-	if delivering[p] or not p.Parent or not site:GetAttribute("ChamberOpen") then
+	if delivering[p] or not p.Parent or not site:GetAttribute("ChamberOpen") or not site:GetAttribute("ChamberReady") then
 		return false
 	end
 	local data = _G.PyramidData
@@ -585,6 +585,7 @@ local function watchPlayer(p)
 		end
 	end
 	p:GetAttributeChangedSignal("DataLoaded"):Connect(tryDeliver)
+	p:GetAttributeChangedSignal("PendingChamberMinutes"):Connect(tryDeliver)
 	tryDeliver()
 end
 
