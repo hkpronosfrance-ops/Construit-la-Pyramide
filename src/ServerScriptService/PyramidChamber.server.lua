@@ -1,3 +1,4 @@
+local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local CollectionService = game:GetService("CollectionService")
 
@@ -473,6 +474,74 @@ local function openUp(t, mult)
 	m.Parent = floor1
 end
 
+local delivering = {}
+
+local function pendingMinutes(p)
+	local n = tonumber(p:GetAttribute("PendingChamberMinutes")) or 0
+	if n ~= n or n == math.huge or n == -math.huge then
+		return 0
+	end
+	return math.max(0, math.floor(n))
+end
+
+local function deliverPending(p)
+	if delivering[p] or not p.Parent or not site:GetAttribute("ChamberOpen") or not site:GetAttribute("ChamberReady") then
+		return false
+	end
+	local data = _G.PyramidData
+	if not (data and data.IsLoaded(p)) then
+		return false
+	end
+
+	local pending = pendingMinutes(p)
+	if pending <= 0 then
+		return true
+	end
+
+	local mins = tonumber(site:GetAttribute("ChamberMinutes")) or C.Chamber.Minutes
+	if mins ~= mins or mins == math.huge or mins == -math.huge then
+		mins = C.Chamber.Minutes
+	end
+	mins = math.clamp(math.floor(mins), C.Chamber.Minutes, C.Chamber.MaxMinutes)
+	local room = math.max(0, C.Chamber.MaxMinutes - mins)
+	local add = math.min(pending, room)
+	if add <= 0 then
+		return false
+	end
+
+	delivering[p] = true
+	local endAt = tonumber(site:GetAttribute("ChamberEnd"))
+	if not endAt or endAt ~= endAt or endAt == math.huge or endAt == -math.huge then
+		endAt = now()
+	end
+
+	-- Apply only what fits in the current chamber. Any remainder stays on the
+	-- player and can be consumed by a later chamber/server.
+	site:SetAttribute("ChamberMinutes", mins + add)
+	site:SetAttribute("ChamberEnd", math.max(endAt, now()) + add * 60)
+	p:SetAttribute("PendingChamberMinutes", pending - add)
+
+	-- Persist the consumed credit promptly. If this save fails, the player's
+	-- credit remains dirty and the normal autosave/leave path will retry it.
+	task.spawn(function()
+		if p.Parent and data.IsLoaded(p) then
+			data.Save(p)
+		end
+		delivering[p] = nil
+	end)
+	return true
+end
+
+_G.PyramidChamber = {
+	DeliverPending = deliverPending,
+}
+
+local function deliverOnlinePending()
+	for _, p in Players:GetPlayers() do
+		task.defer(deliverPending, p)
+	end
+end
+
 local running = false
 local function run()
 	running = true
@@ -484,6 +553,9 @@ local function run()
 		warn("[PyramidChamber] could not open the pyramid: " .. tostring(err))
 	end
 	site:SetAttribute("ChamberReady", true)
+	-- Paid minutes are player-owned credits. Apply saved credits only after the
+	-- chamber is actually open and ready.
+	deliverOnlinePending()
 	while site:GetAttribute("ChamberOpen") and now() < (site:GetAttribute("ChamberEnd") or 0) do
 		task.wait(0.25)
 	end
@@ -505,3 +577,24 @@ end)
 if site:GetAttribute("ChamberOpen") and not running then
 	task.spawn(run)
 end
+
+local function watchPlayer(p)
+	local function tryDeliver()
+		if p:GetAttribute("DataLoaded") == true and pendingMinutes(p) > 0 and site:GetAttribute("ChamberOpen") then
+			task.defer(deliverPending, p)
+		end
+	end
+	-- DataLoaded only: receipt grants are delivered explicitly by ProcessReceipt
+	-- after the entitlement has been saved, so an unsaved purchase cannot leak
+	-- into transient chamber state.
+	p:GetAttributeChangedSignal("DataLoaded"):Connect(tryDeliver)
+	tryDeliver()
+end
+
+Players.PlayerAdded:Connect(watchPlayer)
+for _, p in Players:GetPlayers() do
+	watchPlayer(p)
+end
+Players.PlayerRemoving:Connect(function(p)
+	delivering[p] = nil
+end)

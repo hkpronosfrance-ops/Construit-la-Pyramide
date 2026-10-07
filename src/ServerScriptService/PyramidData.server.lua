@@ -23,7 +23,7 @@ local CLAIM_WAIT = 2
 
 local SAVED = {
 	C.Stats.Coins, C.Stats.Speed, C.Stats.Strength, C.Stats.Pyramids, C.Stats.Carrying,
-	"Blocks", "PendingPurchasedBlocks", "GroupRewardClaimed", "PharaohOff",
+	"Blocks", "PendingPurchasedBlocks", "PendingChamberMinutes", "GroupRewardClaimed", "PharaohOff",
 }
 for _, b in C.Boosts do
 	table.insert(SAVED, b.Level)
