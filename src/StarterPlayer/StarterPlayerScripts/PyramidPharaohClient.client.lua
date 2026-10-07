@@ -4,6 +4,15 @@ local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 
+-- le modèle Pharaoh est en streaming "Persistent" : il peut arriver plusieurs secondes
+-- après le lancement du script, donc on l'attend avec un délai explicite
+local map = workspace:WaitForChild("PyramidMap")
+local model = map:WaitForChild("Pharaoh", 60)
+if not model then
+	warn("[PyramidPharaohClient] Pharaoh introuvable dans PyramidMap")
+	return
+end
+
 task.spawn(function()
 	local RS = game:GetService("ReplicatedStorage")
 	local C = require(RS:WaitForChild("PyramidHUD"):WaitForChild("Config"))
@@ -14,7 +23,6 @@ task.spawn(function()
 	if ok and info and info.PriceInRobux then
 		price = info.PriceInRobux
 	end
-	local model = workspace:WaitForChild("PyramidMap"):WaitForChild("Pharaoh")
 	local tag = model:FindFirstChild("Tag", true)
 	local label = tag and tag:FindFirstChild("Price")
 	if label and price then
@@ -25,11 +33,6 @@ task.spawn(function()
 		prompt.ObjectText = price .. " Robux"
 	end
 end)
-local map = workspace:WaitForChild("PyramidMap")
-local model = map:FindFirstChild("Pharaoh")
-if not model then
-	return
-end
 local npc = model:WaitForChild("PharaohNPC")
 local hum = npc:WaitForChild("Humanoid")
 local animator = hum:WaitForChild("Animator")
