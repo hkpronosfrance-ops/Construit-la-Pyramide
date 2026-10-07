@@ -30,9 +30,16 @@ for _, b in C.Boosts do
 end
 for _, u in U.List do
 	table.insert(SAVED, u.Level)
+	table.insert(SAVED, "PaidUpgrade_" .. u.Id)
 end
-for zone in C.ZoneUnlock or {} do
+for _, b in C.Boosts do
+	table.insert(SAVED, "PaidBoost_" .. b.Id)
+end
+for zone, def in C.ZoneUnlock or {} do
 	table.insert(SAVED, "Unlocked_" .. zone)
+	if (def.ProductId or 0) > 0 then
+		table.insert(SAVED, "PaidZone_" .. zone)
+	end
 end
 
 local loaded = {}
@@ -280,6 +287,35 @@ local function releaseSession(p)
 	end
 end
 
+local function migratePaidEntitlements(p)
+	-- Existing servers did not record the source of upgrade levels. Preserve the
+	-- current level as a conservative reset floor so an older Robux purchase
+	-- cannot be erased by an admin reset after this migration.
+	for _, u in U.List do
+		local attr = "PaidUpgrade_" .. u.Id
+		if p:GetAttribute(attr) == nil then
+			local level = math.clamp(math.floor(tonumber(p:GetAttribute(u.Level)) or 1), 1, U.MaxLevel)
+			p:SetAttribute(attr, level)
+		end
+	end
+	-- Boost levels are Developer Product purchases, so the loaded level is a
+	-- valid paid floor for pre-migration profiles.
+	for _, b in C.Boosts do
+		local attr = "PaidBoost_" .. b.Id
+		if p:GetAttribute(attr) == nil then
+			p:SetAttribute(attr, C.boostLevel(b, p:GetAttribute(b.Level)))
+		end
+	end
+	for zone, def in C.ZoneUnlock or {} do
+		if (def.ProductId or 0) > 0 then
+			local attr = "PaidZone_" .. zone
+			if p:GetAttribute(attr) == nil then
+				p:SetAttribute(attr, p:GetAttribute("Unlocked_" .. zone) == true)
+			end
+		end
+	end
+end
+
 local function derive(p)
 	for _, b in C.Boosts do
 		local level = C.boostLevel(b, p:GetAttribute(b.Level))
@@ -296,6 +332,7 @@ end
 local function load(p)
 	if not LIVE then
 		receipts[p] = {}
+		migratePaidEntitlements(p)
 		derive(p)
 		loaded[p] = true
 		lastSaved[p] = nil
@@ -335,6 +372,7 @@ local function load(p)
 		end
 	end
 
+	migratePaidEntitlements(p)
 	derive(p)
 	loaded[p] = true
 	revisions[p] = revisionOf(data)
