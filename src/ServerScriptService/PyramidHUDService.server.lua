@@ -210,6 +210,13 @@ task.spawn(function()
 	end)
 end)
 
+local function deliverPurchasedBlocks(p)
+	local build = _G.PyramidBuild
+	if build and build.DeliverPending then
+		task.defer(build.DeliverPending, p)
+	end
+end
+
 MPS.ProcessReceipt = function(receipt)
 	local p = Players:GetPlayerByUserId(receipt.PlayerId)
 	local grant = products[receipt.ProductId]
@@ -219,6 +226,7 @@ MPS.ProcessReceipt = function(receipt)
 	end
 	if data.HasReceipt(p, receipt.PurchaseId) then
 		if data.Save(p) then
+			deliverPurchasedBlocks(p)
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		end
 		return Enum.ProductPurchaseDecision.NotProcessedYet
@@ -234,6 +242,9 @@ MPS.ProcessReceipt = function(receipt)
 	if not data.Save(p) then
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
+	-- World delivery starts only after the paid entitlement and receipt are
+	-- durably saved. Other product types simply have nothing pending to deliver.
+	deliverPurchasedBlocks(p)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 
