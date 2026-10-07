@@ -32,8 +32,8 @@ C.Boosts = {
 	},
 	{
 		Id = "Strength",
-		Title = "2x Strength",
-		Factor = 2,
+		Title = "1.6x Strength",
+		Factor = 1.6,
 		Level = "StrengthBoosts",
 		Multiplier = "StrengthMultiplier",
 		Icon = C.Icons.Strength,
