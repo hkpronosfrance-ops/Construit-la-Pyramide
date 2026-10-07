@@ -4,6 +4,7 @@ local RS = game:GetService("ReplicatedStorage")
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local U = require(folder:WaitForChild("UpgradesConfig"))
+local Ready = require(script.Parent:WaitForChild("PyramidPlayerReady"))
 
 local remote = folder:FindFirstChild("Upgrades") or Instance.new("RemoteEvent")
 remote.Name = "Upgrades"
@@ -28,6 +29,10 @@ end
 local busy = {}
 remote.OnServerEvent:Connect(function(p, action, id, seen)
 	if action ~= "buy" or type(id) ~= "string" or busy[p] then
+		return
+	end
+	if not Ready.IsReady(p) then
+		remote:FireClient(p, "denied", id, "Please wait a moment")
 		return
 	end
 	local u = U.get(id)
