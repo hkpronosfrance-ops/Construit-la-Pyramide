@@ -22,20 +22,34 @@ local function root(p)
 	return ch and ch:FindFirstChild("HumanoidRootPart")
 end
 
+local function paidUpgradeFloor(p, u)
+	return math.clamp(math.floor(tonumber(p:GetAttribute("PaidUpgrade_" .. u.Id)) or 1), 1, U.MaxLevel)
+end
+
+local function paidBoostFloor(p, b)
+	return C.boostLevel(b, p:GetAttribute("PaidBoost_" .. b.Id))
+end
+
 local function setUpgrade(p, u, level)
-	level = math.clamp(math.floor(level), 1, U.MaxLevel)
+	level = math.clamp(math.floor(level), paidUpgradeFloor(p, u), U.MaxLevel)
 	p:SetAttribute(u.Level, level)
 	p:SetAttribute(u.Value, u.Effect(level))
 end
 
 local function setBoost(p, b, times)
+	times = math.clamp(math.floor(times), paidBoostFloor(p, b), #b.Tiers)
 	p:SetAttribute(b.Level, times)
 	p:SetAttribute(b.Multiplier, C.multiplier(b, times))
 end
 
 local function setZones(p, open)
-	for zone in C.ZoneUnlock or {} do
-		p:SetAttribute("Unlocked_" .. zone, open or nil)
+	for zone, def in C.ZoneUnlock or {} do
+		-- GamePass ownership is controlled by Roblox and must not be granted or
+		-- revoked by a generic progression reset.
+		if (def.GamePassId or 0) <= 0 then
+			local paid = p:GetAttribute("PaidZone_" .. zone) == true
+			p:SetAttribute("Unlocked_" .. zone, (open or paid) and true or nil)
+		end
 	end
 end
 
@@ -149,12 +163,12 @@ return {
 			for _, u in U.List do
 				setUpgrade(p, u, action == "maxupgrades" and U.MaxLevel or 1)
 			end
-			return "Upgrades " .. (action == "maxupgrades" and "maxed" or "reset") .. " for " .. p.Name .. "."
+			return "Upgrades " .. (action == "maxupgrades" and "maxed" or "reset to paid minimums") .. " for " .. p.Name .. "."
 		end
 		if action == "boost" then
 			local b = C.boost(args[2] or "")
 			assert(b, "Unknown boost.")
-			local n = ctx.number(args[3], 0, 100, true)
+			local n = ctx.number(args[3], 0, #b.Tiers, true)
 			setBoost(p, b, n)
 			return b.Title .. " bought " .. n .. " times for " .. p.Name .. "."
 		end
@@ -172,7 +186,7 @@ return {
 		end
 		if action == "unlockzones" or action == "lockzones" then
 			setZones(p, action == "unlockzones")
-			return "Gym zones " .. (action == "unlockzones" and "unlocked" or "locked") .. " for " .. p.Name .. "."
+			return "Gym zones " .. (action == "unlockzones" and "unlocked (GamePass zones unchanged)" or "reset to paid entitlements") .. " for " .. p.Name .. "."
 		end
 		if action == "resetplayer" then
 			for _, key in { C.Stats.Coins, C.Stats.Speed, C.Stats.Strength, C.Stats.Pyramids, C.Stats.Carrying, "Blocks" } do
@@ -185,7 +199,7 @@ return {
 				setBoost(p, b, 0)
 			end
 			setZones(p, false)
-			return "All stats reset for " .. p.Name .. "."
+			return "Stats reset for " .. p.Name .. "; paid upgrades, boosts and zones were preserved."
 		end
 		local key = ADD[action] or SET[action]
 		assert(key, "Unknown command.")
