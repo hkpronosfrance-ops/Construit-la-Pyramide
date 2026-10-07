@@ -157,7 +157,7 @@ return {
 			assert(u, "Unknown upgrade.")
 			local n = ctx.number(args[3], 1, U.MaxLevel, true)
 			setUpgrade(p, u, n)
-			return u.Title .. " set to Lv." .. n .. " for " .. p.Name .. "."
+			return u.Title .. " set to Lv." .. tostring(p:GetAttribute(u.Level) or n) .. " for " .. p.Name .. "."
 		end
 		if action == "maxupgrades" or action == "resetupgrades" then
 			for _, u in U.List do
@@ -170,7 +170,7 @@ return {
 			assert(b, "Unknown boost.")
 			local n = ctx.number(args[3], 0, #b.Tiers, true)
 			setBoost(p, b, n)
-			return b.Title .. " bought " .. n .. " times for " .. p.Name .. "."
+			return b.Title .. " set to " .. tostring(p:GetAttribute(b.Level) or n) .. " paid tier(s) for " .. p.Name .. "."
 		end
 		if action == "pharaoh" then
 			local mode = string.lower(args[2] or "")
