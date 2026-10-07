@@ -82,19 +82,19 @@ for _, b in C.Boosts do
 	for index, tier in b.Tiers do
 		if tier.ProductId > 0 then
 			products[tier.ProductId] = function(p)
+				local paidAttr = "PaidBoost_" .. b.Id
 				local level = C.boostLevel(b, p:GetAttribute(b.Level))
-				if level >= #b.Tiers then
+				if index <= level then
+					p:SetAttribute(paidAttr, math.max(C.boostLevel(b, p:GetAttribute(paidAttr)), index))
 					return true
 				end
 				local expected = level + 1
-				if index < expected then
-					return true
-				end
 				if index > expected then
 					return false
 				end
 				p:SetAttribute(b.Level, expected)
 				p:SetAttribute(b.Multiplier, C.multiplier(b, expected))
+				p:SetAttribute(paidAttr, math.max(C.boostLevel(b, p:GetAttribute(paidAttr)), expected))
 				return true
 			end
 		end
@@ -116,6 +116,7 @@ for zoneName, u in C.ZoneUnlock or {} do
 	if (u.ProductId or 0) > 0 then
 		products[u.ProductId] = function(p)
 			p:SetAttribute("Unlocked_" .. zoneName, true)
+			p:SetAttribute("PaidZone_" .. zoneName, true)
 			return true
 		end
 	end
