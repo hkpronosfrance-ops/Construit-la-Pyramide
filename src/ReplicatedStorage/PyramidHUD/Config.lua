@@ -90,7 +90,7 @@ C.Chamber = {
 		{ Minutes = 1, Price = 49, ProductId = 3715452094 },
 		{ Minutes = 5, Price = 129, ProductId = 3715452098 },
 		{ Minutes = 10, Price = 249, ProductId = 3715452102 },
-		{ Minutes = 50, Price = 699, ProductId = 3715452107 },
+		{ Minutes = 20, Price = 499, ProductId = 3715452107 },
 	},
 }
 
