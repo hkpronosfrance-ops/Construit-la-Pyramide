@@ -603,6 +603,10 @@ for _, b in C.Boosts do
 
 	local function refresh()
 		local tier = C.nextTier(b, attr(b.Level))
+		if not tier then
+			priceText.Text = "MAX"
+			return
+		end
 		livePrice(tier.ProductId, tier.Price, function(price)
 			priceText.Text = (isFrench and "SEULEMENT " or prefix(priceText, "ONLY ")) .. full(price)
 		end, priceText)
@@ -610,7 +614,12 @@ for _, b in C.Boosts do
 	boostRefresh[b.Level] = refresh
 	refresh()
 	face.Activated:Connect(function()
-		prompt(C.nextTier(b, attr(b.Level)).ProductId)
+		local tier = C.nextTier(b, attr(b.Level))
+		if tier then
+			prompt(tier.ProductId)
+		else
+			say(isFrench and "Niveau maximum atteint" or "Maximum level reached")
+		end
 	end)
 end
 

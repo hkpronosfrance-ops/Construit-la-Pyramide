@@ -389,6 +389,12 @@ local carry = {}
 local finishing = false
 local expected = 0
 
+local function addContribution(userId, blocks)
+	if blocks and blocks > 0 then
+		helpers[userId] = (helpers[userId] or 0) + blocks
+	end
+end
+
 local function coinReward(blocks)
 	return math.floor(blocks * S.CoinsPerBlock * t.Mult * ServerBoosts.Get("coins") + 0.5)
 end
@@ -448,7 +454,7 @@ local function newPyramid(key)
 		finishing = false
 		local blocks = 0
 		for _, c in carry do
-			helpers[c[1]] = true
+			addContribution(c[1], c[2])
 			blocks += c[2]
 		end
 		table.clear(carry)
@@ -464,7 +470,7 @@ function finish()
 	end
 	finishing = true
 	for _, p in Players:GetPlayers() do
-		if helpers[p.UserId] then
+		if (helpers[p.UserId] or 0) >= (C.PyramidMinContribution or 1) then
 			local baseAdd = (p:GetAttribute("Pharaoh") and C.Pharaoh and C.Pharaoh.Pyramids) or 1
 			local add = pyramidReward(baseAdd)
 			p:SetAttribute(C.Stats.Pyramids, (p:GetAttribute(C.Stats.Pyramids) or 0) + add)
@@ -562,7 +568,7 @@ local function place(p, f, list)
 	p:SetAttribute("Blocks", (p:GetAttribute("Blocks") or 0) + used)
 	local gain = coinReward(used)
 	p:SetAttribute(C.Stats.Coins, (p:GetAttribute(C.Stats.Coins) or 0) + gain)
-	helpers[p.UserId] = true
+	addContribution(p.UserId, used)
 	remote:FireAllClients("cells", f, changed)
 	if closed then
 		closeFloor()
@@ -635,7 +641,7 @@ local function instaPlace(p)
 				p:SetAttribute("Blocks", (p:GetAttribute("Blocks") or 0) + used)
 				local gain = coinReward(used)
 				p:SetAttribute(C.Stats.Coins, (p:GetAttribute(C.Stats.Coins) or 0) + gain)
-				helpers[p.UserId] = true
+				addContribution(p.UserId, used)
 				remote:FireAllClients("cells", f, changed)
 				remote:FireClient(p, "placed", used, gain)
 			end
@@ -669,7 +675,7 @@ local function robuxFill(p, amount)
 	p:SetAttribute("Blocks", (p:GetAttribute("Blocks") or 0) + amount)
 	local gain = coinReward(amount)
 	p:SetAttribute(C.Stats.Coins, (p:GetAttribute(C.Stats.Coins) or 0) + gain)
-	helpers[p.UserId] = true
+	addContribution(p.UserId, fits)
 	remote:FireClient(p, "placed", amount, gain)
 	if amount > fits then
 		table.insert(carry, { p.UserId, amount - fits })

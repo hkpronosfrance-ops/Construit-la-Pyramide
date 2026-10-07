@@ -115,7 +115,9 @@ end
 
 local function derive(p)
 	for _, b in C.Boosts do
-		p:SetAttribute(b.Multiplier, C.multiplier(b, p:GetAttribute(b.Level) or 0))
+		local level = C.boostLevel(b, p:GetAttribute(b.Level))
+		p:SetAttribute(b.Level, level)
+		p:SetAttribute(b.Multiplier, C.multiplier(b, level))
 	end
 	for _, u in U.List do
 		local level = math.clamp(math.floor(tonumber(p:GetAttribute(u.Level)) or 1), 1, U.MaxLevel)
