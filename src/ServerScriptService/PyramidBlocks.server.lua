@@ -6,6 +6,7 @@ local TweenService = game:GetService("TweenService")
 local folder = RS:WaitForChild("PyramidHUD")
 local C = require(folder:WaitForChild("Config"))
 local B = require(folder:WaitForChild("BlocksConfig"))
+local Ready = require(script.Parent:WaitForChild("PyramidPlayerReady"))
 local V = B.Visual
 
 local remote = folder:FindFirstChild("Blocks") or Instance.new("RemoteEvent")
@@ -225,6 +226,9 @@ end
 
 local lastGrab = {}
 local function pickUp(p)
+	if not Ready.IsReady(p) then
+		return
+	end
 	local now = os.clock()
 	if now - (lastGrab[p] or 0) < B.PickupCooldown * 0.8 then
 		return
@@ -254,6 +258,9 @@ end
 
 local lastThrow = {}
 local function throw(p)
+	if not Ready.IsReady(p) then
+		return
+	end
 	local carrying = p:GetAttribute(CARRY) or 0
 	local ch = p.Character
 	local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
