@@ -476,7 +476,7 @@ function finish()
 	end
 	finishing = true
 	for _, p in Players:GetPlayers() do
-		if (helpers[p.UserId] or 0) >= (C.PyramidMinContribution or 1) then
+		if Ready.IsReady(p) and (helpers[p.UserId] or 0) >= (C.PyramidMinContribution or 1) then
 			local baseAdd = (p:GetAttribute("Pharaoh") and C.Pharaoh and C.Pharaoh.Pyramids) or 1
 			local add = pyramidReward(baseAdd)
 			p:SetAttribute(C.Stats.Pyramids, (p:GetAttribute(C.Stats.Pyramids) or 0) + add)
@@ -616,7 +616,7 @@ local function instaPlace(p)
 	local per = math.clamp(math.ceil(carrying / INSTA_STEPS), 20, 40)
 	task.spawn(function()
 		local order, orderFloor, at = nil, nil, 1
-		while p.Parent and not finishing and cur.f <= t.Floors do
+		while Ready.IsReady(p) and not finishing and cur.f <= t.Floors do
 			carrying = p:GetAttribute(C.Stats.Carrying) or 0
 			if carrying <= 0 or not hrp.Parent then
 				break
