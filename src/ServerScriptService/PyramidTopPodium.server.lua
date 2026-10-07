@@ -45,44 +45,7 @@ local function setPlaque(name, value)
 	end
 end
 
-local current = { userId = nil, model = nil, valueLabel = nil }
-
-local function makeTag(model, name, value)
-	local head = model:FindFirstChild("Head")
-	if not head then
-		return nil
-	end
-	local gui = Instance.new("BillboardGui")
-	gui.Name = "Top1Tag"
-	gui.Size = UDim2.fromScale(14, 4.6)
-	gui.StudsOffsetWorldSpace = Vector3.new(0, 6.5, 0)
-	gui.LightInfluence = 0
-	gui.MaxDistance = 220
-	gui.Parent = head
-
-	local list = Instance.new("UIListLayout")
-	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	list.Parent = gui
-
-	local function label(text, color, h)
-		local l = Instance.new("TextLabel")
-		l.Size = UDim2.fromScale(1, h)
-		l.BackgroundTransparency = 1
-		l.Font = Enum.Font.FredokaOne
-		l.TextScaled = true
-		l.TextColor3 = color
-		l.Text = text
-		l.Parent = gui
-		local stroke = Instance.new("UIStroke")
-		stroke.Thickness = 4
-		stroke.Color = Color3.fromRGB(40, 20, 10)
-		stroke.Parent = l
-		return l
-	end
-	label("👑 TOP 1", Color3.fromRGB(255, 205, 0), 0.4)
-	label(name, Color3.new(1, 1, 1), 0.33)
-	return label("🔺 " .. value, GOLD_LIGHT, 0.27)
-end
+local current = { userId = nil, model = nil }
 
 -- couronne dorée qui flotte et tourne au-dessus de la tête
 local function addCrown(model, headTop)
@@ -166,7 +129,6 @@ local function clearStatue()
 		current.model:Destroy()
 	end
 	current.model = nil
-	current.valueLabel = nil
 end
 
 local function buildStatue(entry)
@@ -229,9 +191,7 @@ local function buildStatue(entry)
 	model.Parent = podium
 
 	current.model = model
-	local name = entry.name or ("Player " .. entry.userId)
-	current.valueLabel = makeTag(model, name, entry.value or "")
-	setPlaque(name, entry.value)
+	setPlaque(entry.name or ("Player " .. entry.userId), entry.value)
 
 	if hum then
 		local animator = hum:FindFirstChildOfClass("Animator") or Instance.new("Animator", hum)
@@ -277,9 +237,6 @@ local function refresh()
 		return
 	end
 	if first.userId == current.userId then
-		if current.valueLabel then
-			current.valueLabel.Text = "🔺 " .. tostring(first.value)
-		end
 		setPlaque(first.name, first.value)
 		return
 	end
